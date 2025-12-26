@@ -60,6 +60,16 @@ function toggleChat(open) {
 
 
 
+// TEMP: fake decay loop (testing only)
+function startFakeDecay() {
+  setInterval(() => {
+    // decay needs only, very slowly
+    if (fakeMeters.needs > 0) {
+      fakeMeters.needs -= 1;
+      setMeter("needs", fakeMeters.needs);
+    }
+  }, 15000); // 15 seconds per step (slow on purpose)
+}
 
 /* --------------------------------------
    DOM REFERENCES
@@ -91,6 +101,13 @@ const overlayGrave = document.getElementById("overlay-grave");
 let starterEmojis = [];
 let selectedIndex = 0;
 let currentPet = null;
+// TEMP: fake meter state (visual testing only)
+let fakeMeters = {
+  health: 4,
+  needs: 4,
+  mood: 4
+};
+
 
 /* --------------------------------------
    SCREEN CONTROL
@@ -202,11 +219,11 @@ function showPetView() {
   petDisplay.textContent = currentPet.emoji;
   document.body.className = "state-happy";
 
-  // TEMP: visual-only test values
-  setMeter("health", 4);
-  setMeter("needs", 3);
-  setMeter("mood", 5);
+  setMeter("health", fakeMeters.health);
+  setMeter("needs", fakeMeters.needs);
+  setMeter("mood", fakeMeters.mood);
 }
+
 
 /* --------------------------------------
    GRAVE VIEW
@@ -247,6 +264,7 @@ export function startUI() {
   selectedIndex = 0;
 
   connect();
+startFakeDecay();
 
 onChat(entry => {
   renderChatEntry(entry);
