@@ -243,11 +243,15 @@ body.state-dead     { background: var(--bg-dead); }
 }
 
 .chat {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  align-items: end;
-  background: rgba(0,0,0,0.35);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  background: rgba(0,0,0,0.85);
+  overflow: hidden;
+  transition: height 0.25s ease;
+  z-index: 5;
 }
 
 .chat.hidden {
@@ -255,13 +259,9 @@ body.state-dead     { background: var(--bg-dead); }
 }
 
 .chat-panel {
-  background: rgba(0,0,0,0.85);
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  height: 45%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  animation: slideUp 0.25s ease-out;
 }
 
 @keyframes slideUp {
@@ -310,7 +310,9 @@ body.state-dead     { background: var(--bg-dead); }
   color: #eef1ff;
   cursor: pointer;
 }
-
+.chat.open {
+  height: 40%;
+}
 function toggleChat(open) {
   if (open) {
     document.body.classList.add("chat-open");
