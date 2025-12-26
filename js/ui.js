@@ -45,8 +45,10 @@ function toggleChat(open) {
   } else {
     document.body.classList.remove("chat-open");
     chatOverlay.classList.remove("open");
+    chatOverlay.classList.add("hidden");
   }
 }
+
 
 
 
