@@ -159,14 +159,20 @@ if (!/^[A-Za-z]{4,}$/.test(name)) return;
 if (pass.length < 6) return;
 
 
-    currentPet = createPet({
-      emoji,
-      name: name.toUpperCase(),
-      password: pass
-    });
+currentPet = createPet({
+  emoji,
+  name: name.toUpperCase(),
+  password: pass
+});
 
-    overlayAuth.classList.add("hidden");
-    showPetView();
+sendChat({
+  emoji: "🐣",
+  text: "a new pet was born"
+});
+
+overlayAuth.classList.add("hidden");
+showPetView();
+
   };
 }
 
