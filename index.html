@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mini Pet Prototype</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0f1220; color: #eef1ff; }
+    .card {
+      width: min(520px, 92vw);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+    }
+    .options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    button {
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.08);
+      color: inherit;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { background: rgba(255,255,255,0.12); }
+    button[aria-pressed="true"] { outline: 2px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.16); }
+
+    .pet {
+      display: grid;
+      place-items: center;
+      padding: 16px 0 10px;
+      border-radius: 14px;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.10);
+      margin-bottom: 14px;
+    }
+    .emoji { font-size: 72px; line-height: 1; margin: 8px 0; }
+    .caption { opacity: 0.85; font-size: 14px; }
+
+    .form { display: grid; gap: 10px; }
+    label { font-size: 13px; opacity: 0.9; }
+    input {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      color: inherit;
+      outline: none;
+    }
+    input:focus { border-color: rgba(255,255,255,0.35); }
+    .row { display: grid; gap: 6px; }
+    .msg { min-height: 18px; font-size: 13px; opacity: 0.95; }
+    .msg.ok { color: #93ffb4; }
+    .msg.err { color: #ff9aa9; }
+    .hint { font-size: 12px; opacity: 0.75; }
+    .actions { display: flex; gap: 10px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <!-- 3 options listed above the emoji character -->
+    <div class="options" role="group" aria-label="Pet options">
+      <button id="opt-feed" type="button" aria-pressed="true">Feed</button>
+      <button id="opt-play" type="button" aria-pressed="false">Play</button>
+      <button id="opt-sleep" type="button" aria-pressed="false">Sleep</button>
+    </div>
+
+    <!-- Emoji character -->
+    <div class="pet">
+      <div id="pet-emoji" class="emoji" aria-label="pet">😐</div>
+      <div id="pet-caption" class="caption">Choose an option above.</div>
+    </div>
+
+    <!-- Under character: name and password -->
+    <div class="form" aria-label="Login form">
+      <div class="row">
+        <label for="name">Name (exactly 4 letters, no numbers/special chars)</label>
+        <input id="name" name="name" autocomplete="off" inputmode="text" placeholder="e.g. GOBB" />
+        <div id="name-msg" class="msg"></div>
+      </div>
+
+      <div class="row">
+        <label for="password">Password (exactly 6 characters)</label>
+        <input id="password" name="password" type="password" autocomplete="off" placeholder="6 chars" />
+        <div id="pass-msg" class="msg"></div>
+        <div class="hint">Note: you only specified length for password, so any characters are allowed.</div>
+      </div>
+
+      <div class="actions">
+        <button id="btn-submit" type="button">Submit</button>
+        <button id="btn-clear" type="button">Clear</button>
+      </div>
+
+      <div id="form-msg" class="msg"></div>
+    </div>
+  </div>
+
+  <script>
+    // ----------------------------
+    // Pet option -> emoji changes
+    // ----------------------------
+    const petEmoji = document.getElementById("pet-emoji");
+    const petCaption = document.getElementById("pet-caption");
+
+    const buttons = [
+      { el: document.getElementById("opt-feed"),  emoji: "😋", caption: "Nom nom. Tasty!" },
+      { el: document.getElementById("opt-play"),  emoji: "😄", caption: "Wheee! Let's play!" },
+      { el: document.getElementById("opt-sleep"), emoji: "😴", caption: "Zzz… sleepy time." },
+    ];
+
+    function setActiveButton(activeEl) {
+      for (const b of buttons) {
+        const pressed = b.el === activeEl;
+        b.el.setAttribute("aria-pressed", pressed ? "true" : "false");
+      }
+    }
+
+    for (const b of buttons) {
+      b.el.addEventListener("click", () => {
+        setActiveButton(b.el);
+        petEmoji.textContent = b.emoji;
+        petCaption.textContent = b.caption;
+      });
+    }
+
+    // ----------------------------
+    // Validation rules
+    // Name: exactly 4 characters, letters only (no numbers/specials)
+    // Password: exactly 6 characters (any chars allowed)
+    // ----------------------------
+    const nameInput = document.getElementById("name");
+    const passInput = document.getElementById("password");
+    const nameMsg = document.getElementById("name-msg");
+    const passMsg = document.getElementById("pass-msg");
+    const formMsg = document.getElementById("form-msg");
+
+    function setMsg(el, text, kind) {
+      el.textContent = text;
+      el.classList.remove("ok", "err");
+      if (kind) el.classList.add(kind);
+    }
+
+    function validateName(raw) {
+      const value = raw.trim();
+      // letters only, exactly 4
+      const ok = /^[A-Za-z]{4}$/.test(value);
+      return { ok, value };
+    }
+
+    function validatePass(raw) {
+      // exactly 6 characters (do not trim; spaces count as characters)
+      const ok = raw.length === 6;
+      return { ok, value: raw };
+    }
+
+    function liveValidate() {
+      const n = validateName(nameInput.value);
+      const p = validatePass(passInput.value);
+
+      if (nameInput.value.length === 0) setMsg(nameMsg, "", null);
+      else if (n.ok) setMsg(nameMsg, "Name OK ✔", "ok");
+      else setMsg(nameMsg, "Name must be exactly 4 letters (A–Z only).", "err");
+
+      if (passInput.value.length === 0) setMsg(passMsg, "", null);
+      else if (p.ok) setMsg(passMsg, "Password length OK ✔", "ok");
+      else setMsg(passMsg, "Password must be exactly 6 characters.", "err");
+
+      return { name: n, pass: p };
+    }
+
+    nameInput.addEventListener("input", liveValidate);
+    passInput.addEventListener("input", liveValidate);
+
+    // ----------------------------
+    // Submit + Clear
+    // ----------------------------
+    document.getElementById("btn-submit").addEventListener("click", () => {
+      const { name, pass } = liveValidate();
+
+      if (!name.ok || !pass.ok) {
+        setMsg(formMsg, "Fix the fields above before continuing.", "err");
+        return;
+      }
+
+      // Demo "success" behavior (no real auth yet)
+      setMsg(formMsg, `Saved locally (demo). Welcome, ${name.value.toUpperCase()}!`, "ok");
+
+      // Example of a next step: store in localStorage
+      localStorage.setItem("pet_user_name", name.value.toUpperCase());
+      localStorage.setItem("pet_user_pass_demo", pass.value); // demo only — don't store real passwords like this
+    });
+
+    document.getElementById("btn-clear").addEventListener("click", () => {
+      nameInput.value = "";
+      passInput.value = "";
+      setMsg(nameMsg, "", null);
+      setMsg(passMsg, "", null);
+      setMsg(formMsg, "", null);
+      nameInput.focus();
+    });
+
+    // Optional: load demo name if it exists
+    const savedName = localStorage.getItem("pet_user_name");
+    if (savedName) nameInput.value = savedName;
+    liveValidate();
+  </script>
+</body>
+</html>
