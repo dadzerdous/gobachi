@@ -210,3 +210,21 @@ body.state-dead     { background: var(--bg-dead); }
   50%  { transform: scale(1.09); }
   100% { transform: scale(1.05); }
 }
+
+/* ---------- CREATE BUTTON ---------- */
+
+.create-btn {
+  margin-top: 18px;
+  padding: 10px 22px;
+  font-size: 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #eef1ff;
+  cursor: pointer;
+}
+
+.create-btn:active {
+  transform: scale(0.95);
+}
+
