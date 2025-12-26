@@ -243,16 +243,12 @@ body.state-dead     { background: var(--bg-dead); }
 }
 
 .chat {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
   height: 0;
   background: rgba(0,0,0,0.85);
   overflow: hidden;
   transition: height 0.25s ease;
-  z-index: 5;
 }
+
 
 .chat.hidden {
   display: none;
