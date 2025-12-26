@@ -357,7 +357,7 @@ body.chat-open #view {
 /* ---- States ---- */
 
 .meter[data-level="5"] .meter-pill { background: #4cff4c; } /* bright green */
-.meter[data-level="4"] .meter-pill { background: #2ea043; } /* green */
+.meter[data-level="4"] .meter-pill { background: #2bb3a3; } /* teal = good */
 .meter[data-level="3"] .meter-pill { background: #f1e05a; } /* yellow */
 .meter[data-level="2"] .meter-pill { background: #ff9f1c; } /* orange */
 .meter[data-level="1"] .meter-pill { background: #ff4d4d; } /* red */
