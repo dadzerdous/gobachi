@@ -7,7 +7,43 @@
 
 import { getStarterPets, createPet } from "./pet.js";
 const createBtn = document.getElementById("create-pet");
+const chatOverlay  = document.getElementById("chat-overlay");
+const chatToggle   = document.getElementById("chat-toggle");
+const chatMessages = document.getElementById("chat-messages");
+const chatText     = document.getElementById("chat-text");
+const chatSend     = document.getElementById("chat-send");
 
+const fakeChat = [
+  { emoji: "🐶", text: "hi" },
+  { emoji: "🐉", text: "it looks tired…" },
+  { emoji: "🦄", text: "i fed it earlier" }
+];
+
+function renderChat() {
+  chatMessages.innerHTML = "";
+  for (const msg of fakeChat) {
+    const line = document.createElement("div");
+    line.className = "chat-line";
+
+    line.innerHTML = `
+      <span class="chat-emoji">${msg.emoji}</span>
+      <span>${msg.text}</span>
+    `;
+
+    chatMessages.appendChild(line);
+  }
+
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+function toggleChat(open) {
+  if (open) {
+    chatOverlay.classList.remove("hidden");
+    renderChat();
+    chatText.focus();
+  } else {
+    chatOverlay.classList.add("hidden");
+  }
+}
 
 /* --------------------------------------
    DOM REFERENCES
@@ -183,6 +219,34 @@ export function startUI() {
   renderCradle();
   bindInput();
 
+if (createBtn) {
   createBtn.classList.remove("hidden");
   createBtn.onclick = () => selectPet();
+}
+
+   chatToggle.onclick = () => toggleChat(true);
+
+chatOverlay.onclick = (e) => {
+  if (e.target === chatOverlay) toggleChat(false);
+};
+chatText.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    chatSend.click();
+  }
+});
+
+chatSend.onclick = () => {
+  if (!chatText.value.trim()) return;
+
+  fakeChat.push({
+    emoji: currentPet ? currentPet.emoji : "👻",
+    text: chatText.value.trim()
+  });
+
+  chatText.value = "";
+  renderChat();
+     chatText.blur();
+};
+
 }
