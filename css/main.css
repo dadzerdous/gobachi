@@ -171,3 +171,42 @@ body.state-happy    { background: var(--bg-happy); }
 body.state-tired    { background: var(--bg-tired); }
 body.state-neglect  { background: var(--bg-neglect); }
 body.state-dead     { background: var(--bg-dead); }
+
+
+/* ======================================================
+   INTERACTIVE PET AFFORDANCE
+====================================================== */
+
+.pet-slot {
+  cursor: pointer;
+}
+
+.pet-center {
+  position: relative;
+}
+
+/* soft focus ring */
+.pet-center::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 2px solid var(--ui-soft);
+  opacity: 0.6;
+}
+
+/* hover / tap feedback */
+.pet-slot:active {
+  transform: scale(0.92);
+}
+
+/* subtle pulse to say "this one is selectable" */
+.pet-center {
+  animation: select-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes select-pulse {
+  0%   { transform: scale(1.05); }
+  50%  { transform: scale(1.09); }
+  100% { transform: scale(1.05); }
+}
