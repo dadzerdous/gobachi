@@ -16,6 +16,24 @@ const chatSend     = document.getElementById("chat-send");
 
 
 
+function setMeter(meterName, level) {
+  const el = document.querySelector(`.meter[data-meter="${meterName}"]`);
+  if (!el) return;
+
+  el.setAttribute("data-level", level);
+}
+
+function showPetView() {
+  showScreen("pet");
+  petDisplay.textContent = currentPet.emoji;
+  document.body.className = "state-happy";
+
+  // TEMP: visual-only test values
+  setMeter("health", 4);
+  setMeter("needs", 3);
+  setMeter("mood", 5);
+}
+
 
 function renderChatEntry(msg) {
   const line = document.createElement("div");
