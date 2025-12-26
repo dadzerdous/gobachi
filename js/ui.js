@@ -254,7 +254,13 @@ if (createBtn) {
   createBtn.onclick = () => selectPet();
 }
 
-   chatToggle.onclick = () => toggleChat(true);
+let chatOpen = false;
+
+chatToggle.onclick = () => {
+  chatOpen = !chatOpen;
+  toggleChat(chatOpen);
+};
+
 
 chatOverlay.onclick = (e) => {
   if (e.target === chatOverlay) toggleChat(false);
