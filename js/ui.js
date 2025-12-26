@@ -6,6 +6,8 @@
 ====================================================== */
 
 import { getStarterPets, createPet } from "./pet.js";
+const createBtn = document.getElementById("create-pet");
+
 
 /* --------------------------------------
    DOM REFERENCES
@@ -165,7 +167,8 @@ function showGrave(pet) {
 function bindInput() {
   cradle.left.onclick = () => moveSelection(-1);
   cradle.right.onclick = () => moveSelection(1);
-  cradle.center.onclick = () => selectPet();
+  cradle.center.onclick = null;
+
 }
 
 /* --------------------------------------
@@ -179,4 +182,7 @@ export function startUI() {
   showScreen("select");
   renderCradle();
   bindInput();
+
+  createBtn.classList.remove("hidden");
+  createBtn.onclick = () => selectPet();
 }
