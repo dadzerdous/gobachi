@@ -262,9 +262,7 @@ chatToggle.onclick = () => {
 };
 
 
-chatOverlay.onclick = (e) => {
-  if (e.target === chatOverlay) toggleChat(false);
-};
+
 chatText.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
