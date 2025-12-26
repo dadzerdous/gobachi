@@ -324,4 +324,8 @@ function toggleChat(open) {
     chatOverlay.classList.add("hidden");
   }
 }
+body.chat-open #view {
+  padding-bottom: 40vh;
+  transition: padding-bottom 0.25s ease;
+}
 
