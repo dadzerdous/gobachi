@@ -12,29 +12,25 @@ const chatToggle   = document.getElementById("chat-toggle");
 const chatMessages = document.getElementById("chat-messages");
 const chatText     = document.getElementById("chat-text");
 const chatSend     = document.getElementById("chat-send");
+import { connect, sendChat, onChat, onPresence } from "./net.js";
 
-const fakeChat = [
-  { emoji: "🐶", text: "hi" },
-  { emoji: "🐉", text: "it looks tired…" },
-  { emoji: "🦄", text: "i fed it earlier" }
-];
 
-function renderChat() {
-  chatMessages.innerHTML = "";
-  for (const msg of fakeChat) {
-    const line = document.createElement("div");
-    line.className = "chat-line";
 
-    line.innerHTML = `
-      <span class="chat-emoji">${msg.emoji}</span>
-      <span>${msg.text}</span>
-    `;
+function renderChatEntry(msg) {
+  const line = document.createElement("div");
+  line.className = "chat-line";
 
-    chatMessages.appendChild(line);
-  }
+  line.innerHTML = `
+    <span class="chat-emoji">${msg.emoji}</span>
+    <span>${msg.text}</span>
+  `;
 
+  chatMessages.appendChild(line);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
+
+
 function toggleChat(open) {
   if (open) {
     document.body.classList.add("chat-open");
@@ -218,9 +214,24 @@ export function startUI() {
   starterEmojis = getStarterPets();
   selectedIndex = 0;
 
-  showScreen("select");
+  connect();
+
+onChat(entry => {
+  renderChatEntry(entry);
+});
+
+onPresence(count => {
+  const presenceEl = document.getElementById("presence");
+  if (presenceEl) {
+    presenceEl.textContent = `👤 ${count}`;
+  }
+});
+
+   
+   showScreen("select");
   renderCradle();
   bindInput();
+   
 
 if (createBtn) {
   createBtn.classList.remove("hidden");
@@ -242,14 +253,15 @@ chatText.addEventListener("keydown", (e) => {
 chatSend.onclick = () => {
   if (!chatText.value.trim()) return;
 
-  fakeChat.push({
+  sendChat({
     emoji: currentPet ? currentPet.emoji : "👻",
     text: chatText.value.trim()
   });
 
   chatText.value = "";
-  renderChat();
-     chatText.blur();
+  chatText.blur();
 };
+
+
 
 }
