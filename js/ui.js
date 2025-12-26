@@ -40,7 +40,8 @@ function toggleChat(open) {
     document.body.classList.add("chat-open");
     chatOverlay.classList.remove("hidden");
     renderChat();
-    chatText.focus();
+    requestAnimationFrame(() => chatText.focus());
+
   } else {
     document.body.classList.remove("chat-open");
     chatOverlay.classList.add("hidden");
