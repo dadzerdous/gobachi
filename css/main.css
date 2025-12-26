@@ -228,3 +228,87 @@ body.state-dead     { background: var(--bg-dead); }
   transform: scale(0.95);
 }
 
+/* ======================================================
+   CHAT OVERLAY (SLIDE-UP)
+====================================================== */
+
+#chat-toggle {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #eef1ff;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.chat {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-items: end;
+  background: rgba(0,0,0,0.35);
+}
+
+.chat.hidden {
+  display: none;
+}
+
+.chat-panel {
+  background: rgba(0,0,0,0.85);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  height: 45%;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.25s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+#chat-messages {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  font-size: 14px;
+}
+
+.chat-line {
+  margin-bottom: 8px;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.chat-emoji {
+  font-size: 18px;
+}
+
+.chat-input {
+  display: flex;
+  gap: 6px;
+  padding: 10px;
+  border-top: 1px solid rgba(255,255,255,0.15);
+}
+
+#chat-text {
+  flex: 1;
+  padding: 8px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: #eef1ff;
+}
+
+#chat-send {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #eef1ff;
+  cursor: pointer;
+}
+
+
