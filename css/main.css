@@ -1,1 +1,173 @@
-cv
+/* ======================================================
+   GOBACHI — CORE THEME
+   Mobile-first, emoji-first, minimal text
+====================================================== */
+
+/* ---------- RESET / BASE ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg-neutral);
+  color: #eef1ff;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- THEME VARIABLES ---------- */
+
+:root {
+  /* Backgrounds communicate state */
+  --bg-neutral: radial-gradient(circle at top, #2a2f55, #0f1220);
+  --bg-happy:   radial-gradient(circle at top, #3b6b9e, #142036);
+  --bg-tired:   radial-gradient(circle at top, #3a3a3a, #121212);
+  --bg-neglect: radial-gradient(circle at top, #4a2d2d, #1a0f0f);
+  --bg-dead:    radial-gradient(circle at top, #1c1c1c, #000000);
+
+  /* UI accents */
+  --ui-faint: rgba(255,255,255,0.25);
+  --ui-soft:  rgba(255,255,255,0.12);
+}
+
+/* ---------- APP ROOT ---------- */
+
+#app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- HUD ---------- */
+
+#hud {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  opacity: 0.7;
+}
+
+#presence {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- MAIN VIEW ---------- */
+
+#view {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+/* ---------- SCREENS ---------- */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ---------- PET SELECTION (CRADLE) ---------- */
+
+.cradle {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1fr;
+  align-items: center;
+  width: 100%;
+  max-width: 420px;
+  padding: 0 16px;
+}
+
+.pet-slot {
+  display: grid;
+  place-items: center;
+  font-size: 48px;
+  opacity: 0.45;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.pet-center {
+  font-size: 72px;
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.cradle-dots {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  opacity: 0.6;
+}
+
+/* ---------- ACTIVE PET ---------- */
+
+#pet-display {
+  font-size: 96px;
+  line-height: 1;
+  animation: idle-breathe 2.5s ease-in-out infinite;
+}
+
+/* ---------- GRAVE ---------- */
+
+#grave-display {
+  font-size: 80px;
+  opacity: 0.85;
+}
+
+/* ---------- OVERLAYS ---------- */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: grid;
+  place-items: center;
+}
+
+.overlay-content {
+  background: rgba(0,0,0,0.65);
+  border-radius: 14px;
+  padding: 18px;
+  min-width: 260px;
+  text-align: center;
+}
+
+/* ---------- ANIMATIONS ---------- */
+
+@keyframes idle-breathe {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+/* ---------- STATE CLASSES ---------- */
+/* applied to <body> by app.js later */
+
+body.state-happy    { background: var(--bg-happy); }
+body.state-tired    { background: var(--bg-tired); }
+body.state-neglect  { background: var(--bg-neglect); }
+body.state-dead     { background: var(--bg-dead); }
