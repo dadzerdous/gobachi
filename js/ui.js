@@ -25,6 +25,10 @@ function renderChatEntry(msg) {
     <span class="chat-emoji">${msg.emoji}</span>
     <span>${msg.text}</span>
   `;
+   if (msg.emoji === "🐣") {
+  line.style.opacity = "0.8";
+}
+
 
   chatMessages.appendChild(line);
   chatMessages.scrollTop = chatMessages.scrollHeight;
