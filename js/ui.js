@@ -6,13 +6,14 @@
 ====================================================== */
 
 import { getStarterPets, createPet } from "./pet.js";
+import { connect, sendChat, onChat, onPresence } from "./net.js";
 const createBtn = document.getElementById("create-pet");
 const chatOverlay  = document.getElementById("chat-overlay");
 const chatToggle   = document.getElementById("chat-toggle");
 const chatMessages = document.getElementById("chat-messages");
 const chatText     = document.getElementById("chat-text");
 const chatSend     = document.getElementById("chat-send");
-import { connect, sendChat, onChat, onPresence } from "./net.js";
+
 
 
 
@@ -35,14 +36,13 @@ function toggleChat(open) {
   if (open) {
     document.body.classList.add("chat-open");
     chatOverlay.classList.remove("hidden");
-    renderChat();
     requestAnimationFrame(() => chatText.focus());
-
   } else {
     document.body.classList.remove("chat-open");
     chatOverlay.classList.add("hidden");
   }
 }
+
 
 /* --------------------------------------
    DOM REFERENCES
