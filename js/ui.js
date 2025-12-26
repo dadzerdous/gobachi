@@ -152,8 +152,12 @@ function showAuthOverlay(emoji) {
     const name = document.getElementById("pet-name").value.trim();
     const pass = document.getElementById("pet-pass").value;
 
-    if (!/^[A-Za-z]{4}$/.test(name)) return;
-    if (pass.length !== 6) return;
+// name: letters only, at least 4
+if (!/^[A-Za-z]{4,}$/.test(name)) return;
+
+// password: at least 6 characters
+if (pass.length < 6) return;
+
 
     currentPet = createPet({
       emoji,
