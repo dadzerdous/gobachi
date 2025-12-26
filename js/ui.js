@@ -40,12 +40,14 @@ function toggleChat(open) {
   if (open) {
     document.body.classList.add("chat-open");
     chatOverlay.classList.remove("hidden");
+    chatOverlay.classList.add("open");
     requestAnimationFrame(() => chatText.focus());
   } else {
     document.body.classList.remove("chat-open");
-    chatOverlay.classList.add("hidden");
+    chatOverlay.classList.remove("open");
   }
 }
+
 
 
 /* --------------------------------------
