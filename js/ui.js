@@ -130,6 +130,19 @@ if (!meterDismissBound) {
 
 
 function showActionsFor(meterName) {
+   btn.onclick = (e) => {
+  e.stopPropagation(); // ⬅️ THIS WAS MISSING
+
+  if (a.id === "feed" && foodCount === 0) {
+    shakeElement(btn);
+    flashPetView("flash-bad");
+    systemChat("the bowl is empty");
+    return; // ⬅️ do NOT hide immediately
+  }
+
+  console.log(`action: ${a.id}`);
+};
+
   if (activeMeter === meterName) {
     hideActionRow();
     return;
