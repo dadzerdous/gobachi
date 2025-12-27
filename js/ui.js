@@ -90,14 +90,19 @@ function bindMeterActions() {
     };
   });
 
-  // clicking anywhere else closes the action row
-document.addEventListener("click", (e) => {
-  if (chatOpen) return;   // ⬅️ ADD THIS LINE
-  hideActionRow();
-});
+  document.addEventListener("click", (e) => {
+    const clickedInsideMeters =
+      e.target.closest(".meters") ||
+      e.target.closest(".action-row");
+
+    if (!clickedInsideMeters) {
+      hideActionRow();
+    }
+  });
 
   actionRow.addEventListener("click", e => e.stopPropagation());
 }
+
 
 function showActionsFor(meterName) {
   if (activeMeter === meterName) {
