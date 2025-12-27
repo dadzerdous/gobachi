@@ -343,7 +343,9 @@ body.chat-open #view {
   border-radius: 4px;
   background: #2a2a2a; /* default / unknown */
 }
-
+.meter-area {
+  position: relative;
+}
 /* ---- States ---- */
 
 .meter[data-level="5"] .meter-pill { background: #4cff4c; } /* bright green */
@@ -354,11 +356,17 @@ body.chat-open #view {
 .meter[data-level="0"] .meter-pill { background: #000000; } /* black */
 
 
-   .action-row {
+.action-row {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+
   display: flex;
+  align-items: center;
   gap: 10px;
-  justify-content: center;
-  margin-top: 10px;
+
   opacity: 1;
   transition: opacity 140ms ease;
 }
