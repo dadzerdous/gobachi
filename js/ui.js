@@ -152,12 +152,15 @@ function toggleChat(open) {
   if (open) {
     document.body.classList.add("chat-open");
     chatOverlay.classList.remove("hidden");
+    chatOverlay.classList.add("open");   // ✅ THIS LINE
     requestAnimationFrame(() => chatText.focus());
   } else {
     document.body.classList.remove("chat-open");
+    chatOverlay.classList.remove("open"); // ✅ THIS LINE
     chatOverlay.classList.add("hidden");
   }
 }
+
 
 /* --------------------------------------
    FAKE DECAY (TESTING ONLY)
