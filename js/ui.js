@@ -468,8 +468,8 @@ export function startUI() {
     createBtn.classList.remove("hidden");
     createBtn.onclick = () => showAuthOverlay(starterEmojis[selectedIndex]);
   }
-
-chatToggle.onclick = () => {
+if (chatToggle) {
+    chatToggle.onclick = () => {
       console.log("Chat button actually clicked!"); // <--- ADD THIS
       toggleChat(!chatOpen);
     };
