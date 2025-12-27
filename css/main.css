@@ -402,4 +402,8 @@ body.chat-open #view {
 .shake {
   animation: shake 0.18s linear;
 }
+.chat-line.system {
+  opacity: 0.7;
+  font-style: italic;
+}
 
