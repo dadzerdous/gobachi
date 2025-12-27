@@ -55,6 +55,22 @@ let fakeMeters = {
   needs:  4,
   mood:   4
 };
+function shakeElement(el) {
+  el.classList.add("shake");
+  setTimeout(() => el.classList.remove("shake"), 180);
+}
+
+function showPetReaction(tempEmoji) {
+  const original = petDisplay.textContent;
+  petDisplay.textContent = tempEmoji;
+  setTimeout(() => {
+    petDisplay.textContent = original;
+  }, 600);
+}
+
+function systemChat(text) {
+  renderChatEntry({ emoji: "🍖", text });
+}
 
 /* --------------------------------------
    METERS
@@ -132,9 +148,18 @@ function showActionsFor(meterName) {
     const btn = document.createElement("button");
     btn.textContent = a.label;
     btn.onclick = () => {
-      console.log(`action: ${a.id}`);
-      hideActionRow();
-    };
+  if (a.id === "feed" && foodCount === 0) {
+    shakeElement(btn);
+    showPetReaction("😞");
+    systemChat("the bowl is empty");
+    hideActionRow();
+    return;
+  }
+
+  console.log(`action: ${a.id}`);
+  hideActionRow();
+};
+
     actionRow.appendChild(btn);
   }
 
