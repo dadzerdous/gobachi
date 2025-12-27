@@ -68,9 +68,7 @@ function showPetReaction(tempEmoji) {
   }, 600);
 }
 
-function systemChat(text) {
-  renderChatEntry({ emoji: "🍖", text });
-}
+
 function flashPetView(colorClass) {
   const view = document.getElementById("pet-view");
   view.classList.add(colorClass);
