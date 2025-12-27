@@ -266,8 +266,10 @@ body.state-dead     { background: var(--bg-dead); }
 
 
 .chat.hidden {
-  display: none;
+  height: 0 !important;
+  pointer-events: none;
 }
+
 
 .chat-panel {
   height: 100%;
