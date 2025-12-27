@@ -7,6 +7,8 @@
 import { getStarterPets, createPet } from "./pet.js";
 import { connect, sendChat, onChat, onPresence } from "./net.js";
 
+let foodCount = 3; // TEMP: visual test value
+
 /* --------------------------------------
    DOM REFERENCES
 -------------------------------------- */
@@ -98,7 +100,6 @@ document.addEventListener("click", (e) => {
 }
 
 function showActionsFor(meterName) {
-  // toggle off if same meter tapped
   if (activeMeter === meterName) {
     hideActionRow();
     return;
@@ -107,12 +108,19 @@ function showActionsFor(meterName) {
   activeMeter = meterName;
   actionRow.innerHTML = "";
 
+  // 🍖 food count (needs only)
+  if (meterName === "needs") {
+    const food = document.createElement("div");
+    food.className = "resource-count";
+    food.textContent = `🍖 x${foodCount}`;
+    actionRow.appendChild(food);
+  }
+
   const actions = ACTIONS_BY_METER[meterName] || [];
   for (const a of actions) {
     const btn = document.createElement("button");
     btn.textContent = a.label;
     btn.onclick = () => {
-      // stub only — no logic yet
       console.log(`action: ${a.id}`);
       hideActionRow();
     };
@@ -121,6 +129,7 @@ function showActionsFor(meterName) {
 
   actionRow.classList.remove("hidden");
 }
+
 
 function hideActionRow() {
   activeMeter = null;
