@@ -406,4 +406,7 @@ body.chat-open #view {
   opacity: 0.7;
   font-style: italic;
 }
+.flash-bad {
+  background: rgba(255, 0, 0, 0.35) !important;
+}
 
