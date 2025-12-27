@@ -363,3 +363,28 @@ body.chat-open #view {
 .meter[data-level="1"] .meter-pill { background: #ff4d4d; } /* red */
 .meter[data-level="0"] .meter-pill { background: #000000; } /* black */
 
+
+   .action-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+  opacity: 1;
+  transition: opacity 140ms ease;
+}
+
+.action-row.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.action-row button {
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+  color: inherit;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+
