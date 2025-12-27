@@ -1,14 +1,11 @@
 /* ======================================================
    GOBACHI — UI LAYER
    Handles screens, rendering, interactions
-   No persistence, no server, no rules
+   No persistence, no server authority (yet)
 ====================================================== */
 
 import { getStarterPets, createPet } from "./pet.js";
 import { connect, sendChat, onChat, onPresence } from "./net.js";
-
-let foodCount = 3; // TEMP: visual test value
-let meterDismissBound = false;
 
 /* --------------------------------------
    DOM REFERENCES
@@ -39,6 +36,7 @@ const graveDisplay = document.getElementById("grave-display");
 const overlayAuth  = document.getElementById("overlay-auth");
 const overlayGrave = document.getElementById("overlay-grave");
 
+const actionRow = document.getElementById("action-row");
 
 /* --------------------------------------
    UI STATE
@@ -47,167 +45,83 @@ const overlayGrave = document.getElementById("overlay-grave");
 let starterEmojis  = [];
 let selectedIndex  = 0;
 let currentPet     = null;
-let chatOpen       = false;
 
-// TEMP: visual-only meter state
+let chatOpen       = false;
+let activeMeter    = null;
+
+// TEMP: visual-only meters (no rules yet)
 let fakeMeters = {
   health: 4,
   needs:  4,
   mood:   4
 };
+
+// TEMP: food resource (local-only testing)
+let foodCount = 0;
+const FOOD_MAX = 10;
+
+/* --------------------------------------
+   MICRO FEEDBACK HELPERS
+-------------------------------------- */
+
 function shakeElement(el) {
+  if (!el) return;
   el.classList.add("shake");
   setTimeout(() => el.classList.remove("shake"), 180);
 }
 
-function showPetReaction(tempEmoji) {
-  const original = petDisplay.textContent;
-  petDisplay.textContent = tempEmoji;
-  setTimeout(() => {
-    petDisplay.textContent = original;
-  }, 600);
+// Button feedback: always show something on click.
+// kind: "neutral" | "ok" | "bad"
+function flashButton(btn, kind = "neutral") {
+  if (!btn) return;
+
+  btn.classList.remove("btn-neutral", "btn-ok", "btn-bad");
+
+  const cls = kind === "ok" ? "btn-ok" : kind === "bad" ? "btn-bad" : "btn-neutral";
+  btn.classList.add(cls);
+
+  // allow repeated taps to retrigger
+  setTimeout(() => btn.classList.remove(cls), 140);
 }
 
-
+// Background flash for stronger failures (noticeable)
 function flashPetView(className) {
   const view = document.getElementById("pet-view");
   if (!view) return;
 
   view.classList.add(className);
-  setTimeout(() => view.classList.remove(className), 250);
-}
-
-
-/* --------------------------------------
-   METERS
--------------------------------------- */
-
-function setMeter(name, level) {
-  const el = document.querySelector(`.meter[data-meter="${name}"]`);
-  if (!el) return;
-  el.setAttribute("data-level", level);
-}
-const actionRow = document.getElementById("action-row");
-let activeMeter = null;
-
-const ACTIONS_BY_METER = {
-  needs: [
-    { id: "feed", label: "🍖 Feed" },
-    { id: "drink", label: "💧 Drink" },
-    { id: "buy", label: "🛒 Buy" }
-  ],
-  mood: [
-    { id: "play", label: "🎾 Play" },
-    { id: "visit", label: "🫂 Visit" }
-  ],
-  health: [
-    { id: "clean", label: "🛁 Clean" },
-    { id: "rest", label: "😴 Rest" }
-  ]
-};
-function bindMeterActions() {
-  document.querySelectorAll(".meter").forEach(meter => {
-    meter.onclick = (e) => {
-      e.stopPropagation();
-      showActionsFor(meter.dataset.meter);
-    };
-  });
-
-if (!meterDismissBound) {
-  document.addEventListener("click", (e) => {
-    const clickedInsideMeters =
-      e.target.closest(".meters") ||
-      e.target.closest(".action-row");
-
-    if (!clickedInsideMeters) {
-      hideActionRow();
-    }
-  });
-
-  meterDismissBound = true;
-}
-
-
-  actionRow.addEventListener("click", e => e.stopPropagation());
-}
-
-
-function showActionsFor(meterName) {
-
-  if (activeMeter === meterName) {
-    hideActionRow();
-    return;
-  }
-
-  activeMeter = meterName;
-  actionRow.innerHTML = "";
-
-  // 🍖 food count (needs only)
-  if (meterName === "needs") {
-    const food = document.createElement("div");
-    food.className = "resource-count";
-    food.textContent = `🍖 x${foodCount}`;
-    actionRow.appendChild(food);
-  }
-
-  const actions = ACTIONS_BY_METER[meterName] || [];
-  for (const a of actions) {
-    const btn = document.createElement("button");
-    btn.textContent = a.label;
-btn.onclick = (e) => {
-  e.stopPropagation(); // ⬅️ MUST be first
-
-  if (a.id === "feed" && foodCount === 0) {
-    shakeElement(btn);
-    flashPetView("flash-bad");
-    systemChat("the bowl is empty");
-
-    // ⬅️ keep action row open briefly for feedback
-    setTimeout(hideActionRow, 600);
-    return;
-  }
-
-  console.log(`action: ${a.id}`);
-
-  // success path also delays close
-  setTimeout(hideActionRow, 600);
-};
-
-
-    actionRow.appendChild(btn);
-  }
-
-  actionRow.classList.remove("hidden");
-}
-
-
-function hideActionRow() {
-  activeMeter = null;
-  actionRow.classList.add("hidden");
+  setTimeout(() => view.classList.remove(className), 220);
 }
 
 /* --------------------------------------
    CHAT
 -------------------------------------- */
-function systemChat(text) {
-  renderChatEntry({
-    emoji: "🍖",
-    text,
-    system: true
-  });
+
+// Local system message (UI-only).
+// Later, community-pet system messages can be broadcast via sendChat(...) as needed.
+function systemChat(text, emoji = "⚙️") {
+  renderChatEntry({ emoji, text, system: true });
+}
+
+function isSystemEmoji(emoji) {
+  // style these as "system-like" messages
+  return emoji === "⚙️" || emoji === "🐣" || emoji === "🍖";
 }
 
 function renderChatEntry(msg) {
+  if (!chatMessages) return;
+
   const line = document.createElement("div");
   line.className = "chat-line";
 
+  if (msg.system || isSystemEmoji(msg.emoji)) {
+    line.classList.add("chat-system");
+  }
+
   line.innerHTML = `
     <span class="chat-emoji">${msg.emoji}</span>
-    <span>${msg.text}</span>
+    <span class="chat-text">${msg.text}</span>
   `;
-
-  if (msg.emoji === "🐣") line.style.opacity = "0.8";
-if (msg.system) line.classList.add("system");
 
   chatMessages.appendChild(line);
   chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -216,18 +130,150 @@ if (msg.system) line.classList.add("system");
 function toggleChat(open) {
   chatOpen = open;
 
+  if (!chatOverlay) return;
+
   if (open) {
     document.body.classList.add("chat-open");
     chatOverlay.classList.remove("hidden");
-    chatOverlay.classList.add("open");   // ✅ THIS LINE
-    requestAnimationFrame(() => chatText.focus());
+    requestAnimationFrame(() => chatText && chatText.focus());
   } else {
     document.body.classList.remove("chat-open");
-    chatOverlay.classList.remove("open"); // ✅ THIS LINE
     chatOverlay.classList.add("hidden");
   }
 }
 
+/* --------------------------------------
+   METERS
+-------------------------------------- */
+
+function setMeter(name, level) {
+  const el = document.querySelector(`.meter[data-meter="${name}"]`);
+  if (!el) return;
+  el.setAttribute("data-level", String(level));
+}
+
+/* --------------------------------------
+   ACTION ROW (meter → actions)
+-------------------------------------- */
+
+const ACTIONS_BY_METER = {
+  needs: [
+    { id: "feed",  label: "🍖 Feed" },
+    { id: "drink", label: "💧 Drink" },
+    { id: "buy",   label: "🛒 Buy" }
+  ],
+  mood: [
+    { id: "play",  label: "🎾 Play" },
+    { id: "visit", label: "🫂 Visit" }
+  ],
+  health: [
+    { id: "clean", label: "🛁 Clean" },
+    { id: "rest",  label: "😴 Rest" }
+  ]
+};
+
+function updateNeedsResourceDisplay() {
+  if (!actionRow) return;
+  const el = actionRow.querySelector(".resource-count");
+  if (!el) return;
+
+  el.textContent = `🍖 x${foodCount}`;
+}
+
+function hideActionRow() {
+  activeMeter = null;
+  if (actionRow) actionRow.classList.add("hidden");
+}
+
+function showActionsFor(meterName) {
+  if (!actionRow) return;
+
+  // tap same meter toggles off
+  if (activeMeter === meterName) {
+    hideActionRow();
+    return;
+  }
+
+  activeMeter = meterName;
+  actionRow.innerHTML = "";
+
+  // resource header (needs only)
+  if (meterName === "needs") {
+    const food = document.createElement("div");
+    food.className = "resource-count";
+    food.textContent = `🍖 x${foodCount}`;
+    actionRow.appendChild(food);
+  }
+
+  const actions = ACTIONS_BY_METER[meterName] || [];
+
+  for (const a of actions) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = a.label;
+
+    btn.onclick = (e) => {
+      // never let clicks bubble to "click-away close"
+      e.stopPropagation();
+
+      // ALWAYS show tactile feedback so buttons don't feel dead
+      flashButton(btn, "neutral");
+
+      // v0 behavior: only implement BUY success/failure
+      if (a.id === "buy") {
+        if (foodCount >= FOOD_MAX) {
+          // fail: maxed out
+          flashButton(btn, "bad");
+          shakeElement(btn);
+          flashPetView("flash-bad");
+          systemChat("you're at your current limit", "🍖");
+          // action row stays open (by design)
+          updateNeedsResourceDisplay();
+          return;
+        }
+
+        // success
+        foodCount += 1;
+        flashButton(btn, "ok");
+        systemChat("🍖 +1 food added", "🍖");
+        updateNeedsResourceDisplay();
+        return;
+      }
+
+      // stub: other actions not implemented yet
+      systemChat(`(${a.id}) not wired yet`, "⚙️");
+    };
+
+    actionRow.appendChild(btn);
+  }
+
+  actionRow.classList.remove("hidden");
+}
+
+function bindMeterActions() {
+  // meter click → show its action row
+  document.querySelectorAll(".meter").forEach(meter => {
+    meter.onclick = (e) => {
+      e.stopPropagation();
+      showActionsFor(meter.dataset.meter);
+    };
+  });
+
+  // keep clicks inside action row from closing it
+  if (actionRow) {
+    actionRow.addEventListener("click", e => e.stopPropagation());
+  }
+
+  // click-away closes action row (but NOT when using the chat panel)
+  document.addEventListener("click", (e) => {
+    const clickedInside =
+      e.target.closest(".meters") ||
+      e.target.closest(".action-row") ||
+      e.target.closest(".chat-panel"); // don't close when interacting with chat
+
+    if (!clickedInside) hideActionRow();
+  });
+}
 
 /* --------------------------------------
    FAKE DECAY (TESTING ONLY)
@@ -235,11 +281,12 @@ function toggleChat(open) {
 
 function startFakeDecay() {
   setInterval(() => {
+    // gentle decay on needs (visual testing)
     if (fakeMeters.needs > 0) {
       fakeMeters.needs -= 1;
       setMeter("needs", fakeMeters.needs);
     }
-  }, 15000); // slow + gentle
+  }, 15000);
 }
 
 /* --------------------------------------
@@ -247,63 +294,82 @@ function startFakeDecay() {
 -------------------------------------- */
 
 function hideAllScreens() {
-  Object.values(screens).forEach(s => s.classList.add("hidden"));
+  Object.values(screens).forEach(s => s && s.classList.add("hidden"));
 }
 
 function showScreen(name) {
   hideAllScreens();
-  screens[name].classList.remove("hidden");
+  if (screens[name]) screens[name].classList.remove("hidden");
 }
 
 /* --------------------------------------
-   CRADLE
+   CRADLE (pet picker)
 -------------------------------------- */
 
 function renderDots(total, active) {
   cradle.dots.innerHTML = "";
   for (let i = 0; i < total; i++) {
-    cradle.dots.appendChild(
-      document.createTextNode(i === active ? "●" : "○")
-    );
+    const dot = document.createElement("div");
+    dot.textContent = i === active ? "●" : "○";
+    cradle.dots.appendChild(dot);
   }
 }
 
 function renderCradle() {
   const total = starterEmojis.length;
+  if (!total) return;
 
-  cradle.left.textContent   = starterEmojis[(selectedIndex - 1 + total) % total];
+  const leftIndex  = (selectedIndex - 1 + total) % total;
+  const rightIndex = (selectedIndex + 1) % total;
+
+  cradle.left.textContent   = starterEmojis[leftIndex];
   cradle.center.textContent = starterEmojis[selectedIndex];
-  cradle.right.textContent  = starterEmojis[(selectedIndex + 1) % total];
+  cradle.right.textContent  = starterEmojis[rightIndex];
 
   renderDots(total, selectedIndex);
 }
 
 function moveSelection(dir) {
+  if (!starterEmojis.length) return;
   selectedIndex = (selectedIndex + dir + starterEmojis.length) % starterEmojis.length;
   renderCradle();
 }
 
 /* --------------------------------------
-   AUTH OVERLAY
+   AUTH OVERLAY (name + pass)
 -------------------------------------- */
 
 function showAuthOverlay(emoji) {
+  if (!overlayAuth) return;
+
   overlayAuth.classList.remove("hidden");
   overlayAuth.innerHTML = `
     <div class="overlay-content">
       <div style="font-size:64px;margin-bottom:12px">${emoji}</div>
       <input id="pet-name" placeholder="name (4+ letters)" />
       <input id="pet-pass" type="password" placeholder="password (6+ chars)" />
-      <button id="auth-confirm">✔</button>
+      <button id="auth-confirm" type="button">✔</button>
     </div>
   `;
 
-  document.getElementById("auth-confirm").onclick = () => {
-    const name = document.getElementById("pet-name").value.trim();
-    const pass = document.getElementById("pet-pass").value;
+  const confirm = document.getElementById("auth-confirm");
+  if (!confirm) return;
 
-    if (!/^[A-Za-z]{4,}$/.test(name)) return;
-    if (pass.length < 6) return;
+  confirm.onclick = () => {
+    const name = (document.getElementById("pet-name")?.value || "").trim();
+    const pass = (document.getElementById("pet-pass")?.value || "");
+
+    // name: letters only, at least 4
+    if (!/^[A-Za-z]{4,}$/.test(name)) {
+      systemChat("name must be 4+ letters", "⚙️");
+      return;
+    }
+
+    // pass: at least 6 characters
+    if (pass.length < 6) {
+      systemChat("password must be 6+ chars", "⚙️");
+      return;
+    }
 
     currentPet = createPet({
       emoji,
@@ -311,7 +377,8 @@ function showAuthOverlay(emoji) {
       password: pass
     });
 
-    sendChat({ emoji: "🐣", text: "a new pet was born" });
+    // local system msg for now
+    systemChat("🐣 a new pet was born", "🐣");
 
     overlayAuth.classList.add("hidden");
     showPetView();
@@ -324,23 +391,48 @@ function showAuthOverlay(emoji) {
 
 function showPetView() {
   showScreen("pet");
-  petDisplay.textContent = currentPet.emoji;
 
+  if (petDisplay && currentPet) {
+    petDisplay.textContent = currentPet.emoji;
+  }
+
+  // initialize meters (visual)
   setMeter("health", fakeMeters.health);
   setMeter("needs",  fakeMeters.needs);
   setMeter("mood",   fakeMeters.mood);
 
-  bindMeterActions();
+  // ensure action row is hidden when entering pet view
+  hideActionRow();
 }
 
+/* --------------------------------------
+   GRAVE VIEW (stub)
+-------------------------------------- */
+
+function showGrave(pet) {
+  showScreen("grave");
+  if (!graveDisplay) return;
+
+  graveDisplay.textContent = "🪦";
+  graveDisplay.onclick = () => {
+    if (!overlayGrave) return;
+    overlayGrave.classList.remove("hidden");
+    overlayGrave.innerHTML = `
+      <div class="overlay-content">
+        <div style="font-size:48px;">🪦</div>
+        <div style="margin-top:8px;">${pet?.name || "UNKNOWN"}</div>
+      </div>
+    `;
+  };
+}
 
 /* --------------------------------------
-   INPUT
+   INPUT (mobile-first)
 -------------------------------------- */
 
 function bindInput() {
-  cradle.left.onclick  = () => moveSelection(-1);
-  cradle.right.onclick = () => moveSelection(1);
+  if (cradle.left)  cradle.left.onclick  = () => moveSelection(-1);
+  if (cradle.right) cradle.right.onclick = () => moveSelection(1);
 }
 
 /* --------------------------------------
@@ -351,8 +443,8 @@ export function startUI() {
   starterEmojis = getStarterPets();
   selectedIndex = 0;
 
+  // Networking
   connect();
-  startFakeDecay();
 
   onChat(renderChatEntry);
 
@@ -361,36 +453,46 @@ export function startUI() {
     if (el) el.textContent = `👤 ${count}`;
   });
 
+  // Screens
   showScreen("select");
   renderCradle();
   bindInput();
+
+  // Click behaviors
+  bindMeterActions();
 
   if (createBtn) {
     createBtn.classList.remove("hidden");
     createBtn.onclick = () => showAuthOverlay(starterEmojis[selectedIndex]);
   }
 
+  if (chatToggle) {
+    chatToggle.onclick = () => toggleChat(!chatOpen);
+  }
 
-chatToggle.onclick = (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  toggleChat(!chatOpen);
-};
+  if (chatSend) {
+    chatSend.onclick = () => {
+      if (!chatText || !chatText.value.trim()) return;
 
+      // Player chat: send to server (broadcast)
+      sendChat({
+        emoji: currentPet ? currentPet.emoji : "👻",
+        text: chatText.value.trim()
+      });
 
+      chatText.value = "";
+    };
+  }
 
-  chatSend.onclick = () => {
-    if (!chatText.value.trim()) return;
-
-    sendChat({
-      emoji: currentPet ? currentPet.emoji : "👻",
-      text: chatText.value.trim()
+  if (chatText) {
+    chatText.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (chatSend) chatSend.click();
+      }
     });
+  }
 
-    chatText.value = "";
-  };
-
-  chatText.addEventListener("keydown", e => {
-    if (e.key === "Enter") chatSend.click();
-  });
+  // Visual-only decay
+  startFakeDecay();
 }
