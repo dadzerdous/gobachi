@@ -247,7 +247,16 @@ body.state-dead     { background: var(--bg-dead); }
 /* ======================================================
    CHAT OVERLAY (SLIDE-UP)
 ====================================================== */
+/* Ensure the height is applied when the overlay is active */
+#chat-overlay.open {
+  height: 40vh; /* Changed from 40% to 40vh for consistency */
+  display: block; /* Ensure display:none is overridden */
+}
 
+/* Ensure the view shrinks to make room for the chat */
+body.chat-open #view {
+  height: 60vh; /* Adjust view height when chat is open */
+}
 #chat-toggle {
   margin-left: auto;
   background: none;
