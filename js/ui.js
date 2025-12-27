@@ -35,9 +35,7 @@ const petDisplay   = document.getElementById("pet-display");
 const graveDisplay = document.getElementById("grave-display");
 const overlayAuth  = document.getElementById("overlay-auth");
 const overlayGrave = document.getElementById("overlay-grave");
-chatOverlay.addEventListener("click", (e) => {
-  e.stopPropagation();
-});
+
 
 /* --------------------------------------
    UI STATE
@@ -91,7 +89,11 @@ function bindMeterActions() {
   });
 
   // clicking anywhere else closes the action row
-  document.addEventListener("click", hideActionRow);
+document.addEventListener("click", (e) => {
+  if (chatOpen) return;   // ⬅️ ADD THIS LINE
+  hideActionRow();
+});
+
   actionRow.addEventListener("click", e => e.stopPropagation());
 }
 
@@ -300,13 +302,11 @@ export function startUI() {
 
 
 chatToggle.onclick = (e) => {
+  e.preventDefault();
   e.stopPropagation();
   toggleChat(!chatOpen);
 };
 
-   chatOverlay.addEventListener("click", (e) => {
-  e.stopPropagation();
-});
 
 
   chatSend.onclick = () => {
