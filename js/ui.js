@@ -296,6 +296,10 @@ export function startUI() {
   }
 
   chatToggle.onclick = () => toggleChat(!chatOpen);
+chatToggle.onclick = (e) => {
+  e.stopPropagation();
+  toggleChat(!chatOpen);
+};
 
   chatSend.onclick = () => {
     if (!chatText.value.trim()) return;
