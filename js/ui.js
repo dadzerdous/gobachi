@@ -69,11 +69,14 @@ function showPetReaction(tempEmoji) {
 }
 
 
-function flashPetView(colorClass) {
+function flashPetView(className) {
   const view = document.getElementById("pet-view");
-  view.classList.add(colorClass);
-  setTimeout(() => view.classList.remove(colorClass), 200);
+  if (!view) return;
+
+  view.classList.add(className);
+  setTimeout(() => view.classList.remove(className), 250);
 }
+
 
 /* --------------------------------------
    METERS
