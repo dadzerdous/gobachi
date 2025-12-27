@@ -8,6 +8,7 @@ import { getStarterPets, createPet } from "./pet.js";
 import { connect, sendChat, onChat, onPresence } from "./net.js";
 
 let foodCount = 3; // TEMP: visual test value
+let meterDismissBound = false;
 
 /* --------------------------------------
    DOM REFERENCES
@@ -90,6 +91,7 @@ function bindMeterActions() {
     };
   });
 
+if (!meterDismissBound) {
   document.addEventListener("click", (e) => {
     const clickedInsideMeters =
       e.target.closest(".meters") ||
@@ -99,6 +101,10 @@ function bindMeterActions() {
       hideActionRow();
     }
   });
+
+  meterDismissBound = true;
+}
+
 
   actionRow.addEventListener("click", e => e.stopPropagation());
 }
