@@ -469,8 +469,10 @@ export function startUI() {
     createBtn.onclick = () => showAuthOverlay(starterEmojis[selectedIndex]);
   }
 
-  if (chatToggle) {
-    chatToggle.onclick = () => toggleChat(!chatOpen);
+chatToggle.onclick = () => {
+      console.log("Chat button actually clicked!"); // <--- ADD THIS
+      toggleChat(!chatOpen);
+    };
   }
 
   if (chatSend) {
