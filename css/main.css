@@ -126,11 +126,16 @@ body {
 /* ---------- ACTIVE PET ---------- */
 
 #pet-display {
-  font-size: 96px;
-  line-height: 1;
-  animation: idle-breathe 2.5s ease-in-out infinite;
-     transition: background-color 120ms ease;
-  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 14px 18px;
+  min-width: 110px;
+  min-height: 110px;
+
+  transition: background-color 120ms ease;
+  border-radius: 16px;
 }
 
 #pet-display.flash-bad {
