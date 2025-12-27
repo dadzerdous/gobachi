@@ -61,6 +61,66 @@ function setMeter(name, level) {
   if (!el) return;
   el.setAttribute("data-level", level);
 }
+const actionRow = document.getElementById("action-row");
+let activeMeter = null;
+
+const ACTIONS_BY_METER = {
+  needs: [
+    { id: "feed", label: "🍖 Feed" },
+    { id: "drink", label: "💧 Drink" },
+    { id: "buy", label: "🛒 Buy" }
+  ],
+  mood: [
+    { id: "play", label: "🎾 Play" },
+    { id: "visit", label: "🫂 Visit" }
+  ],
+  health: [
+    { id: "clean", label: "🛁 Clean" },
+    { id: "rest", label: "😴 Rest" }
+  ]
+};
+function bindMeterActions() {
+  document.querySelectorAll(".meter").forEach(meter => {
+    meter.onclick = (e) => {
+      e.stopPropagation();
+      showActionsFor(meter.dataset.meter);
+    };
+  });
+
+  // clicking anywhere else closes the action row
+  document.addEventListener("click", hideActionRow);
+  actionRow.addEventListener("click", e => e.stopPropagation());
+}
+
+function showActionsFor(meterName) {
+  // toggle off if same meter tapped
+  if (activeMeter === meterName) {
+    hideActionRow();
+    return;
+  }
+
+  activeMeter = meterName;
+  actionRow.innerHTML = "";
+
+  const actions = ACTIONS_BY_METER[meterName] || [];
+  for (const a of actions) {
+    const btn = document.createElement("button");
+    btn.textContent = a.label;
+    btn.onclick = () => {
+      // stub only — no logic yet
+      console.log(`action: ${a.id}`);
+      hideActionRow();
+    };
+    actionRow.appendChild(btn);
+  }
+
+  actionRow.classList.remove("hidden");
+}
+
+function hideActionRow() {
+  activeMeter = null;
+  actionRow.classList.add("hidden");
+}
 
 /* --------------------------------------
    CHAT
@@ -194,7 +254,10 @@ function showPetView() {
   setMeter("health", fakeMeters.health);
   setMeter("needs",  fakeMeters.needs);
   setMeter("mood",   fakeMeters.mood);
+
+  bindMeterActions();
 }
+
 
 /* --------------------------------------
    INPUT
