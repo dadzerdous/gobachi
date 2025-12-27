@@ -441,6 +441,8 @@ function bindInput() {
 -------------------------------------- */
 
 export function startUI() {
+   console.log("chatToggle:", chatToggle);
+
   starterEmojis = getStarterPets();
   selectedIndex = 0;
 
