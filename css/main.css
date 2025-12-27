@@ -385,4 +385,9 @@ body.chat-open #view {
   font-weight: 600;
 }
 
+.resource-count {
+  font-weight: 600;
+  opacity: 0.85;
+  margin-right: 6px;
+}
 
