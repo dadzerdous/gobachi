@@ -126,6 +126,7 @@ body {
 /* ---------- ACTIVE PET ---------- */
 
 #pet-display {
+     font-size: 72px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
