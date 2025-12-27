@@ -130,16 +130,17 @@ function renderChatEntry(msg) {
 
 function toggleChat(open) {
   chatOpen = open;
-
   if (!chatOverlay) return;
 
   if (open) {
     document.body.classList.add("chat-open");
     chatOverlay.classList.remove("hidden");
+    chatOverlay.classList.add("open"); // ADD THIS LINE
     requestAnimationFrame(() => chatText && chatText.focus());
   } else {
     document.body.classList.remove("chat-open");
     chatOverlay.classList.add("hidden");
+    chatOverlay.classList.remove("open"); // ADD THIS LINE
   }
 }
 
