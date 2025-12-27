@@ -85,13 +85,14 @@ function flashButton(btn, kind = "neutral") {
 }
 
 // Background flash for stronger failures (noticeable)
-function flashPetView(className) {
-  const view = document.getElementById("pet-view");
-  if (!view) return;
+function flashPetCell(className) {
+  const el = document.getElementById("pet-display");
+  if (!el) return;
 
-  view.classList.add(className);
-  setTimeout(() => view.classList.remove(className), 220);
+  el.classList.add(className);
+  setTimeout(() => el.classList.remove(className), 220);
 }
+
 
 /* --------------------------------------
    CHAT
@@ -225,7 +226,7 @@ function showActionsFor(meterName) {
           // fail: maxed out
           flashButton(btn, "bad");
           shakeElement(btn);
-          flashPetView("flash-bad");
+          flashPetCell("flash-bad");
           systemChat("you're at your current limit", "🍖");
           // action row stays open (by design)
           updateNeedsResourceDisplay();
