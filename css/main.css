@@ -129,6 +129,16 @@ body {
   font-size: 96px;
   line-height: 1;
   animation: idle-breathe 2.5s ease-in-out infinite;
+     transition: background-color 120ms ease;
+  border-radius: 12px;
+}
+
+#pet-display.flash-bad {
+  background: rgba(255, 60, 60, 0.35);
+}
+
+#pet-display.flash-good {
+  background: rgba(80, 255, 80, 0.25);
 }
 
 /* ---------- GRAVE ---------- */
