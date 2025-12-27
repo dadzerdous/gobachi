@@ -151,21 +151,25 @@ function showActionsFor(meterName) {
   for (const a of actions) {
     const btn = document.createElement("button");
     btn.textContent = a.label;
-    btn.onclick = (e) => {
-         e.stopPropagation();
+btn.onclick = (e) => {
+  e.stopPropagation(); // ⬅️ MUST be first
+
   if (a.id === "feed" && foodCount === 0) {
     shakeElement(btn);
     flashPetView("flash-bad");
+    systemChat("the bowl is empty");
 
-   systemChat("the bowl is empty"); // local-only, system
-
-   
+    // ⬅️ keep action row open briefly for feedback
+    setTimeout(hideActionRow, 600);
     return;
   }
 
   console.log(`action: ${a.id}`);
-  hideActionRow();
+
+  // success path also delays close
+  setTimeout(hideActionRow, 600);
 };
+
 
     actionRow.appendChild(btn);
   }
