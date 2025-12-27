@@ -35,6 +35,9 @@ const petDisplay   = document.getElementById("pet-display");
 const graveDisplay = document.getElementById("grave-display");
 const overlayAuth  = document.getElementById("overlay-auth");
 const overlayGrave = document.getElementById("overlay-grave");
+chatOverlay.addEventListener("click", (e) => {
+  e.stopPropagation();
+});
 
 /* --------------------------------------
    UI STATE
@@ -295,11 +298,16 @@ export function startUI() {
     createBtn.onclick = () => showAuthOverlay(starterEmojis[selectedIndex]);
   }
 
-  chatToggle.onclick = () => toggleChat(!chatOpen);
+
 chatToggle.onclick = (e) => {
   e.stopPropagation();
   toggleChat(!chatOpen);
 };
+
+   chatOverlay.addEventListener("click", (e) => {
+  e.stopPropagation();
+});
+
 
   chatSend.onclick = () => {
     if (!chatText.value.trim()) return;
