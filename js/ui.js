@@ -71,6 +71,11 @@ function showPetReaction(tempEmoji) {
 function systemChat(text) {
   renderChatEntry({ emoji: "🍖", text });
 }
+function flashPetView(colorClass) {
+  const view = document.getElementById("pet-view");
+  view.classList.add(colorClass);
+  setTimeout(() => view.classList.remove(colorClass), 200);
+}
 
 /* --------------------------------------
    METERS
@@ -150,8 +155,10 @@ function showActionsFor(meterName) {
     btn.onclick = () => {
   if (a.id === "feed" && foodCount === 0) {
     shakeElement(btn);
-    showPetReaction("😞");
-    systemChat("the bowl is empty");
+    flashPetView("flash-bad");
+
+   systemChat("the bowl is empty"); // local-only, system
+
     hideActionRow();
     return;
   }
@@ -175,6 +182,13 @@ function hideActionRow() {
 /* --------------------------------------
    CHAT
 -------------------------------------- */
+function systemChat(text) {
+  renderChatEntry({
+    emoji: "🍖",
+    text,
+    system: true
+  });
+}
 
 function renderChatEntry(msg) {
   const line = document.createElement("div");
@@ -186,6 +200,7 @@ function renderChatEntry(msg) {
   `;
 
   if (msg.emoji === "🐣") line.style.opacity = "0.8";
+if (msg.system) line.classList.add("system");
 
   chatMessages.appendChild(line);
   chatMessages.scrollTop = chatMessages.scrollHeight;
