@@ -116,7 +116,7 @@ function renderChatEntry(msg) {
   line.className = "chat-line";
 
   if (msg.system || isSystemEmoji(msg.emoji)) {
-    line.classList.add("chat-system");
+    line.classList.add("system");
   }
 
   line.innerHTML = `
