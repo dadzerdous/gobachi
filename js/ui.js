@@ -192,6 +192,36 @@ function hideBowl() {
 
   game.innerHTML = "";
 }
+function spawnFoodPiece(onResult) {
+  const game = document.getElementById("pet-game");
+  if (!game) return;
+
+  const piece = document.createElement("div");
+  piece.className = "food-piece";
+  piece.textContent = "🍖";
+
+  const startX = Math.random() * 80 + 10; // % across playfield
+  piece.style.left = `${startX}%`;
+
+  game.appendChild(piece);
+
+  let caught = false;
+
+  piece.addEventListener("click", () => {
+    caught = true;
+    piece.classList.add("caught");
+    onResult(true);
+    setTimeout(() => piece.remove(), 120);
+  });
+
+  // auto-fail if it hits bottom
+  setTimeout(() => {
+    if (!caught) {
+      onResult(false);
+      piece.remove();
+    }
+  }, 2200);
+}
 
 /* --------------------------------------
    ACTION ROW (meter → actions)
@@ -593,28 +623,34 @@ setFeedButtonDisabled(true);
   );
 
   // TEMP: fake feeding session (3 seconds)
-  feedingTimer = setTimeout(() => {
-    if (skip) {
-      resolveFeeding({
-        percent: 30,
-        players: 1,
-        skipped: true
-      });
-    } else {
-      // TEMP: random result until minigame exists
-      const roll = Math.random();
-      let result = "fail";
-      if (roll > 0.9) result = "perfect";
-      else if (roll > 0.6) result = "success";
-      else if (roll > 0.3) result = "partial";
+ // ----------------------------
+// FEEDING MINIGAME (v1)
+// ----------------------------
 
-      resolveFeeding({
-        percent: FEED_RESULTS[result],
-        players: 1,
-        skipped: false
-      });
-    }
-  }, 3000);
+let hits = 0;
+let total = 3;
+let finished = 0;
+
+function pieceDone(success) {
+  if (success) hits++;
+  finished++;
+
+  if (finished >= total) {
+    const percent = Math.round((hits / total) * 100);
+
+    resolveFeeding({
+      percent,
+      players: 1,
+      skipped: false
+    });
+  }
+}
+
+// spawn food pieces over time
+spawnFoodPiece(pieceDone);
+setTimeout(() => spawnFoodPiece(pieceDone), 700);
+setTimeout(() => spawnFoodPiece(pieceDone), 1400);
+
 }
 function resolveFeeding({ percent, players, skipped }) {
   clearTimeout(feedingTimer);
