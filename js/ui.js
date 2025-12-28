@@ -10,6 +10,8 @@ import { connect, sendChat, onChat, onPresence } from "./net.js";
 /* --------------------------------------
    DOM REFERENCES
 -------------------------------------- */
+const petEmojiEl = document.getElementById("pet-emoji");
+const feedingField = document.getElementById("feeding-field");
 
 const createBtn    = document.getElementById("create-pet");
 const chatOverlay  = document.getElementById("chat-overlay");
