@@ -551,4 +551,9 @@ body.chat-open #view {
 
 
 
+@keyframes pulse {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  50%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1);   opacity: 0.7; }
+}
 
