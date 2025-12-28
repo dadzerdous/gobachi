@@ -270,6 +270,8 @@ function hideActionRow() {
 
 function showActionsFor(meterName) {
   if (!actionRow) return;
+   if (isFeeding) return;
+
 
   // tap same meter toggles off
   if (activeMeter === meterName) {
@@ -598,8 +600,47 @@ let bowlDir = 1;
 let bowlSpeed = 0.12; // tweak this
 let bowlRAF = null;
 
+function enterFeedingMode() {
+  isFeeding = true;
+
+  // hide pet emoji
+  petEmojiEl.style.display = "none";
+
+  // show feeding layer
+  feedingField.classList.remove("hidden");
+
+  // disable action row (visible but inert)
+  actionRow?.querySelectorAll("button").forEach(btn => {
+    btn.disabled = true;
+    btn.classList.add("disabled");
+  });
+
+  showBowl();
+  startBowlMovement();
+}
+
+function exitFeedingMode() {
+  isFeeding = false;
+
+  // restore pet
+  petEmojiEl.style.display = "";
+
+  // hide feeding layer
+  feedingField.classList.add("hidden");
+
+  // re-enable action buttons
+  actionRow?.querySelectorAll("button").forEach(btn => {
+    btn.disabled = false;
+    btn.classList.remove("disabled");
+  });
+
+  stopBowlMovement();
+  hideBowl();
+}
+
 function startBowlMovement() {
-  const bowl = document.getElementById("bowl");
+  const bowl = document.querySelector(".bowl");
+  if (!bowl) return;
 
   function tick() {
     bowlX += bowlDir * bowlSpeed;
@@ -613,6 +654,7 @@ function startBowlMovement() {
 
   tick();
 }
+
 
 function stopBowlMovement() {
   cancelAnimationFrame(bowlRAF);
@@ -636,18 +678,14 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
   // consume food immediately
   foodCount--;
   updateFoodUI();
+enterFeedingMode();
 
   isFeeding = true;
-   petEmojiEl.style.display = "none";
-feedingField.classList.remove("hidden");
 
-setFeedButtonDisabled(true);
    showBowl();
-document.getElementById("pet-display").classList.add("hidden");
+
 document.getElementById("feeding-field").classList.remove("hidden");
 startBowlMovement();
-
-
 
   systemChat(
     isCommunity
@@ -690,12 +728,11 @@ function resolveFeeding({ percent, players, skipped }) {
   isFeeding = false;
    setFeedButtonDisabled(false);
    hideBowl();
-   petEmojiEl.style.display = "";
-feedingField.classList.add("hidden");
+exitFeedingMode();
 
 stopBowlMovement();
 document.getElementById("feeding-field").classList.add("hidden");
-document.getElementById("pet-display").classList.remove("hidden");
+
    
 
 
