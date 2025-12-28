@@ -704,7 +704,7 @@ function setupFeedingSession() {
       resolveFeeding({ percent, players: 1, skipped: false });
     }
   });
-}
+
 
 function startDropping() {
   if (!isFeeding) return;
