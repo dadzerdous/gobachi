@@ -639,8 +639,8 @@ function exitFeedingMode() {
 }
 
 function startBowlMovement() {
-  const bowl = document.querySelector(".bowl");
-  if (!bowl) return;
+  const bowlArea = document.querySelector(".bowl-area");
+  if (!bowlArea) return;
 
   function tick() {
     bowlX += bowlDir * bowlSpeed;
@@ -648,12 +648,13 @@ function startBowlMovement() {
     if (bowlX >= 85) bowlDir = -1;
     if (bowlX <= 15) bowlDir = 1;
 
-    bowl.style.left = bowlX + "%";
+    bowlArea.style.left = bowlX + "%";
     bowlRAF = requestAnimationFrame(tick);
   }
 
   tick();
 }
+
 
 
 function stopBowlMovement() {
@@ -679,13 +680,6 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
   foodCount--;
   updateFoodUI();
 enterFeedingMode();
-
-  isFeeding = true;
-
-   showBowl();
-
-document.getElementById("feeding-field").classList.remove("hidden");
-startBowlMovement();
 
   systemChat(
     isCommunity
@@ -725,13 +719,10 @@ setTimeout(() => spawnFoodPiece(pieceDone), 1400);
 }
 function resolveFeeding({ percent, players, skipped }) {
   clearTimeout(feedingTimer);
-  isFeeding = false;
+
    setFeedButtonDisabled(false);
-   hideBowl();
 exitFeedingMode();
 
-stopBowlMovement();
-document.getElementById("feeding-field").classList.add("hidden");
 
    
 
