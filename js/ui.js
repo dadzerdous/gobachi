@@ -593,7 +593,7 @@ if (chatToggle) {
 // feeding
 let bowlX = 50; // percent
 let bowlDir = 1;
-let bowlSpeed = 0.04; // tweak this
+let bowlSpeed = 0.12; // tweak this
 let bowlRAF = null;
 
 function startBowlMovement() {
@@ -602,8 +602,8 @@ function startBowlMovement() {
   function tick() {
     bowlX += bowlDir * bowlSpeed;
 
-    if (bowlX >= 90) bowlDir = -1;
-    if (bowlX <= 10) bowlDir = 1;
+    if (bowlX >= 85) bowlDir = -1;
+    if (bowlX <= 15) bowlDir = 1;
 
     bowl.style.left = bowlX + "%";
     bowlRAF = requestAnimationFrame(tick);
