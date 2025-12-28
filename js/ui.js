@@ -160,6 +160,13 @@ function setMeter(name, level) {
   if (!el) return;
   el.setAttribute("data-level", String(level));
 }
+function updateFoodUI() {
+  // Update food count wherever it appears
+  const resource = document.querySelector(".resource-count");
+  if (resource) {
+    resource.textContent = `🍖 x${foodCount}`;
+  }
+}
 
 /* --------------------------------------
    ACTION ROW (meter → actions)
