@@ -486,7 +486,7 @@ body.chat-open #view {
 #pet-playfield {
   position: relative;
   width: 100%;
-  height: min(40vh, 260px);
+  height: min(55vh, 360px);
   margin: 12px auto;
   border-radius: 16px;
   background: rgba(0,0,0,0.15);
