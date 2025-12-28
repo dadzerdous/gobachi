@@ -187,6 +187,36 @@ function showBowl() {
   `;
 }
 
+function showPressPrompt() {
+  const game = document.getElementById("pet-game");
+  if (!game) return;
+
+  const prompt = document.createElement("div");
+  prompt.id = "press-prompt";
+  prompt.textContent = "PRESS";
+
+  Object.assign(prompt.style, {
+    position: "absolute",
+    inset: "0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "32px",
+    fontWeight: "800",
+    letterSpacing: "2px",
+    color: "#fff",
+    background: "rgba(0,0,0,0.35)",
+    animation: "pulse 0.6s ease-in-out infinite",
+    pointerEvents: "none"
+  });
+
+  game.appendChild(prompt);
+}
+
+function hidePressPrompt() {
+  const prompt = document.getElementById("press-prompt");
+  if (prompt) prompt.remove();
+}
 
 function hideBowl() {
   const game = document.getElementById("pet-game");
