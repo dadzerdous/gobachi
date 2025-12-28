@@ -103,8 +103,13 @@ function flashPetCell(className) {
 // Local system message (UI-only).
 // Later, community-pet system messages can be broadcast via sendChat(...) as needed.
 function systemChat(text, emoji = "⚙️") {
-  renderChatEntry({ emoji, text, system: true });
+  renderChatEntry({
+    emoji,
+    text,
+    system: true
+  });
 }
+
 
 function isSystemEmoji(emoji) {
   // style these as "system-like" messages
