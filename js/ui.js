@@ -178,8 +178,13 @@ function showBowl() {
   const game = document.getElementById("pet-game");
   if (!game) return;
 
-  game.innerHTML = `<div class="bowl">🥣</div>`;
+  game.innerHTML = `
+    <div class="bowl-area">
+      <div class="bowl">🥣</div>
+    </div>
+  `;
 }
+
 
 function hideBowl() {
   const game = document.getElementById("pet-game");
