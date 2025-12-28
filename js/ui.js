@@ -167,6 +167,13 @@ function updateFoodUI() {
     resource.textContent = `🍖 x${foodCount}`;
   }
 }
+function setFeedButtonDisabled(disabled) {
+  const btn = document.querySelector('.action-row button[data-action="feed"]');
+  if (!btn) return;
+
+  btn.disabled = disabled;
+  btn.classList.toggle("disabled", disabled);
+}
 
 /* --------------------------------------
    ACTION ROW (meter → actions)
@@ -237,6 +244,7 @@ function showActionsFor(meterName) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.textContent = a.label;
+     btn.dataset.action = a.id;
 
     btn.onclick = (e) => {
       // never let clicks bubble to "click-away close"
@@ -244,10 +252,12 @@ function showActionsFor(meterName) {
 
       // ALWAYS show tactile feedback so buttons don't feel dead
       flashButton(btn, "neutral");
-       if (a.id === "feed") {
+if (a.id === "feed") {
+  if (isFeeding) return;
   startFeeding({ skip: false, isCommunity: false });
   return;
 }
+
 
 
       // v0 behavior: only implement BUY success/failure
@@ -552,6 +562,8 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
   updateFoodUI();
 
   isFeeding = true;
+setFeedButtonDisabled(true);
+
 
   systemChat(
     isCommunity
@@ -586,6 +598,7 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
 function resolveFeeding({ percent, players, skipped }) {
   clearTimeout(feedingTimer);
   isFeeding = false;
+   setFeedButtonDisabled(false);
 
   const coopBonus = Math.min(players * COOP_BONUS_PER_PLAYER, COOP_BONUS_CAP);
   const finalPercent = percent + coopBonus;
