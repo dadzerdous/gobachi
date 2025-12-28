@@ -591,6 +591,31 @@ if (chatToggle) {
   startFakeDecay();
 }
 // feeding
+let bowlX = 50; // percent
+let bowlDir = 1;
+let bowlSpeed = 0.04; // tweak this
+let bowlRAF = null;
+
+function startBowlMovement() {
+  const bowl = document.getElementById("bowl");
+
+  function tick() {
+    bowlX += bowlDir * bowlSpeed;
+
+    if (bowlX >= 90) bowlDir = -1;
+    if (bowlX <= 10) bowlDir = 1;
+
+    bowl.style.left = bowlX + "%";
+    bowlRAF = requestAnimationFrame(tick);
+  }
+
+  tick();
+}
+
+function stopBowlMovement() {
+  cancelAnimationFrame(bowlRAF);
+  bowlRAF = null;
+}
 
 function startFeeding({ skip = false, isCommunity = false } = {}) {
   if (isFeeding) return;
@@ -613,6 +638,9 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
   isFeeding = true;
 setFeedButtonDisabled(true);
    showBowl();
+document.getElementById("pet-display").classList.add("hidden");
+document.getElementById("feeding-field").classList.remove("hidden");
+startBowlMovement();
 
 
 
@@ -657,6 +685,9 @@ function resolveFeeding({ percent, players, skipped }) {
   isFeeding = false;
    setFeedButtonDisabled(false);
    hideBowl();
+stopBowlMovement();
+document.getElementById("feeding-field").classList.add("hidden");
+document.getElementById("pet-display").classList.remove("hidden");
 
 
   const coopBonus = Math.min(players * COOP_BONUS_PER_PLAYER, COOP_BONUS_CAP);
