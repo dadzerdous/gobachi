@@ -636,6 +636,9 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
   updateFoodUI();
 
   isFeeding = true;
+   petEmojiEl.style.display = "none";
+feedingField.classList.remove("hidden");
+
 setFeedButtonDisabled(true);
    showBowl();
 document.getElementById("pet-display").classList.add("hidden");
@@ -685,9 +688,13 @@ function resolveFeeding({ percent, players, skipped }) {
   isFeeding = false;
    setFeedButtonDisabled(false);
    hideBowl();
+   petEmojiEl.style.display = "";
+feedingField.classList.add("hidden");
+
 stopBowlMovement();
 document.getElementById("feeding-field").classList.add("hidden");
 document.getElementById("pet-display").classList.remove("hidden");
+   
 
 
   const coopBonus = Math.min(players * COOP_BONUS_PER_PLAYER, COOP_BONUS_CAP);
