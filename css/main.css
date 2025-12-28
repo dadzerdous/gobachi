@@ -549,11 +549,15 @@ body.chat-open #view {
   to { top: 75%; }
 }
 
-#feeding-field {
+#bowl {
   position: absolute;
-  inset: 0;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 48px;
   pointer-events: none;
 }
+
 
 
 
