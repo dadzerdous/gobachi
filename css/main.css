@@ -547,3 +547,28 @@ body.chat-open #view {
 @keyframes fall {
   to { top: 75%; }
 }
+
+#feeding-field {
+  width: 100%;
+  margin: 12px 0;
+}
+
+#feeding-playfield {
+  position: relative;
+  width: 100%;
+  height: 35vh; /* big enough for real play */
+  max-height: 320px;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-radius: 12px;
+  background: rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+#bowl {
+  position: absolute;
+  bottom: 8px;
+  font-size: 42px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
