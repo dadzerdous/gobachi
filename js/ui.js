@@ -678,17 +678,6 @@ function setupFeedingSession() {
     if (isFeeding && feedingArmed) showPressPrompt();
   }, PRESS_DELAY_MS);
 
-  clearTimeout(feedingTimer);
-  feedingTimer = setTimeout(() => {
-    if (!isFeeding) return;
-
-    // auto-end (partial credit if you got some in)
-    const percent = feedingTotalDrops > 0
-      ? Math.round((feedingHits / feedingTotalDrops) * 100)
-      : 0;
-
-    resolveFeeding({ percent, players: 1, skipped: false });
-  }, FEEDING_SESSION_MS);
 }
 
 
@@ -718,6 +707,18 @@ function startDropping() {
   if (feedingArmed) {
     feedingArmed = false;
     hidePressPrompt();
+
+    // START TIMER HERE ⬇️
+    clearTimeout(feedingTimer);
+    feedingTimer = setTimeout(() => {
+      if (!isFeeding) return;
+
+      const percent = feedingTotalDrops > 0
+        ? Math.round((feedingHits / feedingTotalDrops) * 100)
+        : 0;
+
+      resolveFeeding({ percent, players: 1, skipped: false });
+    }, FEEDING_SESSION_MS);
   }
 
   if (dropInterval) return;
@@ -725,6 +726,7 @@ function startDropping() {
   dropOne(); // immediate
   dropInterval = setInterval(dropOne, DROP_INTERVAL_MS);
 }
+
 
 function stopDropping() {
   clearInterval(dropInterval);
