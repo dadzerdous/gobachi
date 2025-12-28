@@ -511,9 +511,22 @@ body.chat-open #view {
   pointer-events: none;
 }
 
-.bowl {
-  font-size: 48px;
-  margin-bottom: 12px;
-  opacity: 0.9;
+.bowl-area {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 80px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
 }
+
+.bowl {
+  font-size: 56px;
+  opacity: 0.95;
+}
+
 
