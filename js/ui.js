@@ -725,32 +725,6 @@ exitFeedingMode = function () {
       : "you place food in the bowl"
   );
 
-  // TEMP: fake feeding session (3 seconds)
- // ----------------------------
-// FEEDING MINIGAME (v1)
-// ----------------------------
-
-let hits = 0;
-let total = 3;
-let finished = 0;
-
-function pieceDone(success) {
-  if (success) hits++;
-  finished++;
-
-  if (finished >= total) {
-    const percent = Math.round((hits / total) * 100);
-
-    resolveFeeding({
-      percent,
-      players: 1,
-      skipped: false
-    });
-  }
-}
-
-
-
 }
 function resolveFeeding({ percent, players, skipped }) {
   clearTimeout(feedingTimer);
