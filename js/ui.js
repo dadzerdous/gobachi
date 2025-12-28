@@ -174,6 +174,19 @@ function setFeedButtonDisabled(disabled) {
   btn.disabled = disabled;
   btn.classList.toggle("disabled", disabled);
 }
+function showBowl() {
+  const game = document.getElementById("pet-game");
+  if (!game) return;
+
+  game.innerHTML = `<div class="bowl">🥣</div>`;
+}
+
+function hideBowl() {
+  const game = document.getElementById("pet-game");
+  if (!game) return;
+
+  game.innerHTML = "";
+}
 
 /* --------------------------------------
    ACTION ROW (meter → actions)
@@ -563,6 +576,8 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
 
   isFeeding = true;
 setFeedButtonDisabled(true);
+   showBowl();
+
 
 
   systemChat(
@@ -599,6 +614,8 @@ function resolveFeeding({ percent, players, skipped }) {
   clearTimeout(feedingTimer);
   isFeeding = false;
    setFeedButtonDisabled(false);
+   hideBowl();
+
 
   const coopBonus = Math.min(players * COOP_BONUS_PER_PLAYER, COOP_BONUS_CAP);
   const finalPercent = percent + coopBonus;
