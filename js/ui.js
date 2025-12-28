@@ -634,6 +634,98 @@ let bowlDir = 1;
 let bowlSpeed = 0.5; // tweak this
 let bowlRAF = null;
 
+// ----------------------------
+// FEEDING SESSION STATE (v2)
+// ----------------------------
+let feedingTotalDrops = 0;
+let feedingDropsRemaining = 0;
+let feedingHits = 0;
+let feedingFinished = 0;
+
+let dropInterval = null;
+let feedingArmed = false;       // "PRESS" is showing, waiting for first press/hold
+let feedingInputBound = false;
+
+const FEEDING_TOTAL_DROPS = 20;   // 🔧 tune this (start at 20)
+const DROP_INTERVAL_MS = 180;     // 🔧 tune this (180 feels more “Quick Drop”)
+const FEEDING_SESSION_MS = 8000;  // 🔧 timer: auto-end after 8s
+const PRESS_DELAY_MS = 220;       // small WarioWare beat
+
+function bindFeedingInputOnce() {
+  if (feedingInputBound) return;
+  feedingInputBound = true;
+
+  const playfield = document.getElementById("pet-playfield");
+  if (!playfield) return;
+
+  playfield.addEventListener("pointerdown", startDropping);
+  playfield.addEventListener("pointerup", stopDropping);
+  playfield.addEventListener("pointerleave", stopDropping);
+  playfield.addEventListener("pointercancel", stopDropping);
+}
+
+function setupFeedingSession() {
+  feedingTotalDrops = FEEDING_TOTAL_DROPS;
+  feedingDropsRemaining = feedingTotalDrops;
+  feedingHits = 0;
+  feedingFinished = 0;
+
+  feedingArmed = true;
+
+  // WarioWare beat: emoji disappears first, then PRESS
+  hidePressPrompt();
+  setTimeout(() => {
+    if (isFeeding && feedingArmed) showPressPrompt();
+  }, PRESS_DELAY_MS);
+
+  clearTimeout(feedingTimer);
+  feedingTimer = setTimeout(() => {
+    if (!isFeeding) return;
+
+    // auto-end (partial credit if you got some in)
+    const percent = feedingTotalDrops > 0
+      ? Math.round((feedingHits / feedingTotalDrops) * 100)
+      : 0;
+
+    resolveFeeding({ percent, players: 1, skipped: false });
+  }, FEEDING_SESSION_MS);
+}
+
+
+
+  feedingDropsRemaining--;
+
+  spawnFoodPiece(success => {
+    if (success) feedingHits++;
+    feedingFinished++;
+
+    if (feedingFinished >= feedingTotalDrops) {
+      const percent = Math.round((feedingHits / feedingTotalDrops) * 100);
+      resolveFeeding({ percent, players: 1, skipped: false });
+    }
+  });
+}
+
+function startDropping() {
+  if (!isFeeding) return;
+
+  // first press starts the game
+  if (feedingArmed) {
+    feedingArmed = false;
+    hidePressPrompt();
+  }
+
+  if (dropInterval) return;
+
+  dropOne(); // immediate
+  dropInterval = setInterval(dropOne, DROP_INTERVAL_MS);
+}
+
+function stopDropping() {
+  clearInterval(dropInterval);
+  dropInterval = null;
+}
+
 function enterFeedingMode() {
   isFeeding = true;
 
@@ -655,7 +747,9 @@ function enterFeedingMode() {
 showPressPrompt();
 
 function exitFeedingMode() {
-  stopDropping(); // ⬅️ add this
+  stopDropping();
+  hidePressPrompt();
+  clearTimeout(feedingTimer);
 
   isFeeding = false;
 
@@ -670,6 +764,7 @@ function exitFeedingMode() {
   stopBowlMovement();
   hideBowl();
 }
+
 
 
 function startBowlMovement() {
@@ -714,47 +809,18 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
   foodCount--;
   updateFoodUI();
 enterFeedingMode();
-let totalDrops = 30;   
+bindFeedingInputOnce();
+setupFeedingSession();
 
-let finished = 0;
-let hits = 0;
-let dropInterval = null;
+systemChat(
+  isCommunity
+    ? "feeding has begun for the community pet"
+    : "feeding has begun"
+);
 
-
-function dropOne() {
-  if (!isFeeding || dropsRemaining <= 0) {
-    stopDropping();
-    return;
-  }
-
-  dropsRemaining--;
-
-  spawnFoodPiece(success => {
-    if (success) hits++;
-    finished++;
-
-    if (finished >= totalDrops) {
-      const percent = Math.round((hits / totalDrops) * 100);
-      resolveFeeding({
-        percent,
-        players: 1,
-        skipped: false
-      });
-    }
-  });
 }
 
-function startDropping() {
-  if (dropInterval || !isFeeding) return;
-  hidePressPrompt();
-  dropOne(); // immediate drop
-  dropInterval = setInterval(dropOne, 250); // 🔧 speed control
-}
 
-function stopDropping() {
-  clearInterval(dropInterval);
-  dropInterval = null;
-}
 
 const playfield = document.getElementById("pet-playfield");
 
