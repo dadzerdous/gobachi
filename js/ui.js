@@ -692,6 +692,11 @@ function setupFeedingSession() {
 }
 
 
+function dropOne() {
+  if (!isFeeding || feedingDropsRemaining <= 0) {
+    stopDropping();
+    return;
+  }
 
   feedingDropsRemaining--;
 
@@ -704,7 +709,7 @@ function setupFeedingSession() {
       resolveFeeding({ percent, players: 1, skipped: false });
     }
   });
-
+}
 
 function startDropping() {
   if (!isFeeding) return;
@@ -744,7 +749,7 @@ function enterFeedingMode() {
   showBowl();
   startBowlMovement();
 }
-showPressPrompt();
+
 
 function exitFeedingMode() {
   stopDropping();
@@ -820,23 +825,6 @@ systemChat(
 
 }
 
-
-
-const playfield = document.getElementById("pet-playfield");
-
-playfield.addEventListener("pointerdown", startDropping);
-playfield.addEventListener("pointerup", stopDropping);
-playfield.addEventListener("pointerleave", stopDropping);
-playfield.addEventListener("pointercancel", stopDropping);
-
-
-  systemChat(
-    isCommunity
-      ? "feeding has begun for the community pet"
-      : "you place food in the bowl"
-  );
-
-}
 function resolveFeeding({ percent, players, skipped }) {
   clearTimeout(feedingTimer);
 
