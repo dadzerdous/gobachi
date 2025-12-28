@@ -683,8 +683,8 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
   foodCount--;
   updateFoodUI();
 enterFeedingMode();
-let dropsRemaining = 30;
-   let dropsRemaining = totalDrops;
+let totalDrops = 30;   
+
 let finished = 0;
 let hits = 0;
 let dropInterval = null;
