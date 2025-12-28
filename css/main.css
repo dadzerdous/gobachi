@@ -530,3 +530,20 @@ body.chat-open #view {
 }
 
 
+.food-piece {
+  position: absolute;
+  top: -40px;
+  font-size: 32px;
+  animation: fall 2.2s linear forwards;
+  cursor: pointer;
+}
+
+.food-piece.caught {
+  animation: none;
+  transform: scale(0.7);
+  opacity: 0.6;
+}
+
+@keyframes fall {
+  to { top: 75%; }
+}
