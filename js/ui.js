@@ -652,6 +652,7 @@ function enterFeedingMode() {
   showBowl();
   startBowlMovement();
 }
+showPressPrompt();
 
 function exitFeedingMode() {
   stopDropping(); // ⬅️ add this
@@ -745,7 +746,7 @@ function dropOne() {
 
 function startDropping() {
   if (dropInterval || !isFeeding) return;
-
+  hidePressPrompt();
   dropOne(); // immediate drop
   dropInterval = setInterval(dropOne, 250); // 🔧 speed control
 }
