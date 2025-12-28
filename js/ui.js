@@ -447,7 +447,8 @@ function showPetView() {
   showScreen("pet");
 
   if (petDisplay && currentPet) {
-    petDisplay.textContent = currentPet.emoji;
+    document.getElementById("pet-emoji").textContent = currentPet.emoji;
+
   }
 
   // initialize meters (visual)
