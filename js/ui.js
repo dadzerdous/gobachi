@@ -601,7 +601,7 @@ if (chatToggle) {
 // feeding
 let bowlX = 50; // percent
 let bowlDir = 1;
-let bowlSpeed = 0.30; // tweak this
+let bowlSpeed = 0.5; // tweak this
 let bowlRAF = null;
 
 function enterFeedingMode() {
