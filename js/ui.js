@@ -41,6 +41,8 @@ const actionRow = document.getElementById("action-row");
 /* --------------------------------------
    UI STATE
 -------------------------------------- */
+let isFeeding = false;
+let feedingTimer = null;
 
 let starterEmojis  = [];
 let selectedIndex  = 0;
@@ -173,6 +175,16 @@ const ACTIONS_BY_METER = {
     { id: "rest",  label: "😴 Rest" }
   ]
 };
+const FEED_RESULTS = {
+  fail: 0,
+  partial: 40,
+  success: 75,
+  perfect: 100
+};
+
+const COOP_BONUS_PER_PLAYER = 5;
+const COOP_BONUS_CAP = 15;
+
 
 function updateNeedsResourceDisplay() {
   if (!actionRow) return;
@@ -220,6 +232,11 @@ function showActionsFor(meterName) {
 
       // ALWAYS show tactile feedback so buttons don't feel dead
       flashButton(btn, "neutral");
+       if (a.id === "feed") {
+  startFeeding({ skip: false, isCommunity: false });
+  return;
+}
+
 
       // v0 behavior: only implement BUY success/failure
       if (a.id === "buy") {
@@ -501,4 +518,101 @@ if (chatToggle) {
 
   // Visual-only decay
   startFakeDecay();
+}
+// feeding
+
+function startFeeding({ skip = false, isCommunity = false } = {}) {
+  if (isFeeding) return;
+
+  if (foodCount <= 0) {
+    systemChat("the bowl is empty");
+    flashPetFail();
+    return;
+  }
+
+  if (skip && isCommunity) {
+    systemChat("this pet needs care — skipping is not allowed");
+    return;
+  }
+
+  // consume food immediately
+  foodCount--;
+  updateFoodUI();
+
+  isFeeding = true;
+
+  systemChat(
+    isCommunity
+      ? "feeding has begun for the community pet"
+      : "you place food in the bowl"
+  );
+
+  // TEMP: fake feeding session (3 seconds)
+  feedingTimer = setTimeout(() => {
+    if (skip) {
+      resolveFeeding({
+        percent: 30,
+        players: 1,
+        skipped: true
+      });
+    } else {
+      // TEMP: random result until minigame exists
+      const roll = Math.random();
+      let result = "fail";
+      if (roll > 0.9) result = "perfect";
+      else if (roll > 0.6) result = "success";
+      else if (roll > 0.3) result = "partial";
+
+      resolveFeeding({
+        percent: FEED_RESULTS[result],
+        players: 1,
+        skipped: false
+      });
+    }
+  }, 3000);
+}
+function resolveFeeding({ percent, players, skipped }) {
+  clearTimeout(feedingTimer);
+  isFeeding = false;
+
+  const coopBonus = Math.min(players * COOP_BONUS_PER_PLAYER, COOP_BONUS_CAP);
+  const finalPercent = percent + coopBonus;
+
+  // hunger gain (simple scale for now)
+  const hungerGain = Math.round(finalPercent / 25); // 0–4
+  fakeMeters.needs = Math.min(4, fakeMeters.needs + hungerGain);
+  setMeter("needs", fakeMeters.needs);
+
+  // mood effects
+  if (!skipped && percent === 0) {
+    fakeMeters.mood = Math.max(0, fakeMeters.mood - 1);
+    setMeter("mood", fakeMeters.mood);
+    flashPetFail();
+  } else {
+    flashPetSuccess();
+  }
+
+  // chat feedback
+  if (skipped) {
+    systemChat("feeding skipped — the pet eats a little");
+  } else if (percent === 0) {
+    systemChat("feeding failed — the pet turns away");
+  } else {
+    systemChat(
+      `feeding complete — ${players} caretaker${players > 1 ? "s" : ""} helped (+${coopBonus}%)`
+    );
+  }
+}
+function flashPetFail() {
+  document.body.classList.add("pet-flash-fail");
+  setTimeout(() => {
+    document.body.classList.remove("pet-flash-fail");
+  }, 300);
+}
+
+function flashPetSuccess() {
+  document.body.classList.add("pet-flash-success");
+  setTimeout(() => {
+    document.body.classList.remove("pet-flash-success");
+  }, 300);
 }
