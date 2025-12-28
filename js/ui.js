@@ -194,7 +194,9 @@ function hideBowl() {
 
   game.innerHTML = "";
 }
-function spawnFoodPiece(onResult) {
+
+
+   function spawnFoodPiece(onResult) {
   const game = document.getElementById("pet-game");
   if (!game) return;
 
@@ -202,8 +204,9 @@ function spawnFoodPiece(onResult) {
   piece.className = "food-piece";
   piece.textContent = "🍖";
 
-  const startX = Math.random() * 80 + 10; // % across playfield
-  piece.style.left = `${startX}%`;
+  // Always drop from center top (Quick Drop style)
+  piece.style.left = "50%";
+  piece.style.transform = "translateX(-50%)";
 
   game.appendChild(piece);
 
@@ -216,7 +219,7 @@ function spawnFoodPiece(onResult) {
     setTimeout(() => piece.remove(), 120);
   });
 
-  // auto-fail if it hits bottom
+  // auto-fail when it reaches bottom
   setTimeout(() => {
     if (!caught) {
       onResult(false);
@@ -224,6 +227,7 @@ function spawnFoodPiece(onResult) {
     }
   }, 2200);
 }
+
 
 /* --------------------------------------
    ACTION ROW (meter → actions)
@@ -680,6 +684,40 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
   foodCount--;
   updateFoodUI();
 enterFeedingMode();
+let dropsRemaining = 3;
+let finished = 0;
+let hits = 0;
+
+function handleDrop() {
+  if (!isFeeding || dropsRemaining <= 0) return;
+
+  dropsRemaining--;
+
+  spawnFoodPiece(success => {
+    if (success) hits++;
+    finished++;
+
+    if (finished >= 3) {
+      const percent = Math.round((hits / 3) * 100);
+      resolveFeeding({
+        percent,
+        players: 1,
+        skipped: false
+      });
+    }
+  });
+}
+
+// tap anywhere on playfield to drop
+const playfield = document.getElementById("pet-playfield");
+playfield.addEventListener("click", handleDrop, { once: false });
+
+// cleanup listener when feeding ends
+const originalExit = exitFeedingMode;
+exitFeedingMode = function () {
+  playfield.removeEventListener("click", handleDrop);
+  originalExit();
+};
 
   systemChat(
     isCommunity
@@ -711,10 +749,7 @@ function pieceDone(success) {
   }
 }
 
-// spawn food pieces over time
-spawnFoodPiece(pieceDone);
-setTimeout(() => spawnFoodPiece(pieceDone), 700);
-setTimeout(() => spawnFoodPiece(pieceDone), 1400);
+
 
 }
 function resolveFeeding({ percent, players, skipped }) {
