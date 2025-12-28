@@ -624,15 +624,13 @@ function enterFeedingMode() {
 }
 
 function exitFeedingMode() {
+  stopDropping(); // ⬅️ add this
+
   isFeeding = false;
 
-  // restore pet
   petEmojiEl.style.display = "";
-
-  // hide feeding layer
   feedingField.classList.add("hidden");
 
-  // re-enable action buttons
   actionRow?.querySelectorAll("button").forEach(btn => {
     btn.disabled = false;
     btn.classList.remove("disabled");
@@ -641,6 +639,7 @@ function exitFeedingMode() {
   stopBowlMovement();
   hideBowl();
 }
+
 
 function startBowlMovement() {
   const bowlArea = document.querySelector(".bowl-area");
@@ -684,12 +683,18 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
   foodCount--;
   updateFoodUI();
 enterFeedingMode();
-let dropsRemaining = 3;
+let dropsRemaining = 30;
+   let dropsRemaining = totalDrops;
 let finished = 0;
 let hits = 0;
+let dropInterval = null;
 
-function handleDrop() {
-  if (!isFeeding || dropsRemaining <= 0) return;
+
+function dropOne() {
+  if (!isFeeding || dropsRemaining <= 0) {
+    stopDropping();
+    return;
+  }
 
   dropsRemaining--;
 
@@ -697,8 +702,8 @@ function handleDrop() {
     if (success) hits++;
     finished++;
 
-    if (finished >= 3) {
-      const percent = Math.round((hits / 3) * 100);
+    if (finished >= totalDrops) {
+      const percent = Math.round((hits / totalDrops) * 100);
       resolveFeeding({
         percent,
         players: 1,
@@ -708,16 +713,25 @@ function handleDrop() {
   });
 }
 
-// tap anywhere on playfield to drop
-const playfield = document.getElementById("pet-playfield");
-playfield.addEventListener("click", handleDrop, { once: false });
+function startDropping() {
+  if (dropInterval || !isFeeding) return;
 
-// cleanup listener when feeding ends
-const originalExit = exitFeedingMode;
-exitFeedingMode = function () {
-  playfield.removeEventListener("click", handleDrop);
-  originalExit();
-};
+  dropOne(); // immediate drop
+  dropInterval = setInterval(dropOne, 250); // 🔧 speed control
+}
+
+function stopDropping() {
+  clearInterval(dropInterval);
+  dropInterval = null;
+}
+
+const playfield = document.getElementById("pet-playfield");
+
+playfield.addEventListener("pointerdown", startDropping);
+playfield.addEventListener("pointerup", stopDropping);
+playfield.addEventListener("pointerleave", stopDropping);
+playfield.addEventListener("pointercancel", stopDropping);
+
 
   systemChat(
     isCommunity
