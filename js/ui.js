@@ -186,6 +186,66 @@ function showBowl() {
     </div>
   `;
 }
+function bowlPop(success = true) {
+  const bowl = document.querySelector(".bowl");
+  if (!bowl) return;
+
+  bowl.animate(
+    [
+      { transform: "scale(1)" },
+      { transform: success ? "scale(1.25)" : "scale(0.9)" },
+      { transform: "scale(1)" }
+    ],
+    {
+      duration: 180,
+      easing: "ease-out"
+    }
+  );
+
+  if (success) spawnSpark();
+}
+let fuseRAF = null;
+let fuseStartTime = 0;
+
+function startFuse() {
+  const game = document.getElementById("pet-game");
+  if (!game) return;
+
+  let fuse = document.getElementById("fuse-bar");
+  if (!fuse) {
+    fuse = document.createElement("div");
+    fuse.id = "fuse-bar";
+    game.appendChild(fuse);
+  }
+
+  fuseStartTime = performance.now();
+
+  function tick(now) {
+    const elapsed = now - fuseStartTime;
+    const pct = Math.max(0, 1 - elapsed / FEEDING_SESSION_MS);
+
+    fuse.style.transform = `scaleX(${pct})`;
+
+    if (pct > 0 && isFeeding) {
+      fuseRAF = requestAnimationFrame(tick);
+    } else {
+      endFeedingFromTimer();
+    }
+  }
+
+  cancelAnimationFrame(fuseRAF);
+  fuseRAF = requestAnimationFrame(tick);
+}
+
+function endFeedingFromTimer() {
+  if (!isFeeding) return;
+
+  const percent = feedingTotalDrops > 0
+    ? Math.round((feedingHits / feedingTotalDrops) * 100)
+    : 0;
+
+  resolveFeeding({ percent, players: 1, skipped: false });
+}
 
 function showPressPrompt() {
   const game = document.getElementById("pet-game");
@@ -211,6 +271,32 @@ function showPressPrompt() {
   });
 
   game.appendChild(prompt);
+}
+function spawnSpark() {
+  const game = document.getElementById("pet-game");
+  const bowlArea = document.querySelector(".bowl-area");
+  if (!game || !bowlArea) return;
+
+  const spark = document.createElement("div");
+  spark.textContent = "✨";
+  spark.style.position = "absolute";
+  spark.style.left = bowlArea.style.left || "50%";
+  spark.style.bottom = "48px";
+  spark.style.transform = "translateX(-50%)";
+  spark.style.pointerEvents = "none";
+  spark.style.fontSize = "18px";
+
+  game.appendChild(spark);
+
+  spark.animate(
+    [
+      { opacity: 1, transform: "translate(-50%, 0) scale(1)" },
+      { opacity: 0, transform: "translate(-50%, -20px) scale(1.4)" }
+    ],
+    { duration: 300, easing: "ease-out" }
+  );
+
+  setTimeout(() => spark.remove(), 300);
 }
 
 function hidePressPrompt() {
@@ -670,15 +756,23 @@ function setupFeedingSession() {
   feedingHits = 0;
   feedingFinished = 0;
 
-  feedingArmed = true;
+  hideBowl();
+  stopBowlMovement();
 
-  // WarioWare beat: emoji disappears first, then PRESS
-  hidePressPrompt();
+  showPressPrompt();
+
+  // PRESS duration
   setTimeout(() => {
-    if (isFeeding && feedingArmed) showPressPrompt();
-  }, PRESS_DELAY_MS);
+    hidePressPrompt();
 
+    if (!isFeeding) return;
+
+    showBowl();
+    startBowlMovement();
+    startFuse(); // ⬅️ timer starts here
+  }, 1200);
 }
+
 
 
 function dropOne() {
@@ -692,6 +786,8 @@ function dropOne() {
   spawnFoodPiece(success => {
     if (success) feedingHits++;
     feedingFinished++;
+
+       bowlPop(success)
 
     if (feedingFinished >= feedingTotalDrops) {
       const percent = Math.round((feedingHits / feedingTotalDrops) * 100);
