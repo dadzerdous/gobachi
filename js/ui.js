@@ -803,6 +803,8 @@ function bindFeedingInputOnce() {
 }
 
 function setupFeedingSession() {
+   feedingArmed = true;
+
   feedingTotalDrops = FEEDING_TOTAL_DROPS;
   feedingDropsRemaining = feedingTotalDrops;
   feedingHits = 0;
@@ -818,7 +820,7 @@ function setupFeedingSession() {
     hidePressPrompt();
 
     if (!isFeeding) return;
-
+   feedingArmed = false;
     showBowl();
     startBowlMovement();
     startFuse(); // ⬅️ timer starts here
