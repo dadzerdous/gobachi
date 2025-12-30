@@ -367,7 +367,7 @@ setTimeout(() => {
   onResult(false);
   piece.remove();
 }, 2200);
-
+}
 
 function showFeedingFoodCount() {
   const game = document.getElementById("pet-game");
