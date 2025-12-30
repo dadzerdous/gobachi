@@ -312,7 +312,7 @@ function hideBowl() {
 }
 
 
-   function spawnFoodPiece(onResult) {
+function spawnFoodPiece(onResult) {
   const game = document.getElementById("pet-game");
   if (!game) return;
 
@@ -330,24 +330,43 @@ if (lastDropClientX != null) {
 
 
   game.appendChild(piece);
+   const bowlArea = document.querySelector(".bowl-area");
+let resolved = false;
+
+function checkCollision() {
+  if (!isFeeding || resolved) return;
+
+  const foodRect = piece.getBoundingClientRect();
+  const bowlRect = bowlArea.getBoundingClientRect();
+
+  const overlap =
+    foodRect.bottom >= bowlRect.top &&
+    foodRect.top <= bowlRect.bottom &&
+    foodRect.right >= bowlRect.left &&
+    foodRect.left <= bowlRect.right;
+
+  if (overlap) {
+    resolved = true;
+    onResult(true);
+    piece.remove();
+  } else {
+    requestAnimationFrame(checkCollision);
+  }
+}
+
+requestAnimationFrame(checkCollision);
+
 
   let caught = false;
 
-  piece.addEventListener("click", () => {
-    caught = true;
-    piece.classList.add("caught");
-    onResult(true);
-    setTimeout(() => piece.remove(), 120);
-  });
-
   // auto-fail when it reaches bottom
-  setTimeout(() => {
-    if (!caught) {
-      onResult(false);
-      piece.remove();
-    }
-  }, 2200);
-}
+setTimeout(() => {
+  if (resolved) return;
+  resolved = true;
+  onResult(false);
+  piece.remove();
+}, 2200);
+
 
 function showFeedingFoodCount() {
   const game = document.getElementById("pet-game");
@@ -809,6 +828,8 @@ function setupFeedingSession() {
 
 
 function dropOne() {
+   if (feedingArmed) return;
+
    showFeedingFoodCount();
 
   if (!isFeeding || feedingDropsRemaining <= 0) {
@@ -880,8 +901,6 @@ function enterFeedingMode() {
     btn.classList.add("disabled");
   });
 
-  showBowl();
-  startBowlMovement();
 }
 
 
