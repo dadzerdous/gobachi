@@ -567,3 +567,14 @@ body.chat-open #view {
   transform-origin: left center;
   pointer-events: none;
 }
+
+#feeding-food-count {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
