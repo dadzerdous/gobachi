@@ -766,7 +766,7 @@ if (chatToggle) {
   // Visual-only decay
   startFakeDecay();
 }
-}
+
 // feeding
 let bowlX = 50; // percent
 let bowlDir = 1;
