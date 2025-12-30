@@ -320,9 +320,14 @@ function hideBowl() {
   piece.className = "food-piece";
   piece.textContent = "🍖";
 
-  // Always drop from center top (Quick Drop style)
+if (lastDropClientX != null) {
+  piece.style.left = getDropXFromClient(lastDropClientX);
+  piece.style.transform = "translateX(-50%)";
+} else {
   piece.style.left = "50%";
   piece.style.transform = "translateX(-50%)";
+}
+
 
   game.appendChild(piece);
 
@@ -344,6 +349,34 @@ function hideBowl() {
   }, 2200);
 }
 
+function showFeedingFoodCount() {
+  const game = document.getElementById("pet-game");
+  if (!game) return;
+
+  let counter = document.getElementById("feeding-food-count");
+  if (!counter) {
+    counter = document.createElement("div");
+    counter.id = "feeding-food-count";
+    game.appendChild(counter);
+  }
+
+  counter.textContent = `🍖 × ${feedingDropsRemaining}`;
+}
+
+function hideFeedingFoodCount() {
+  const counter = document.getElementById("feeding-food-count");
+  if (counter) counter.remove();
+}
+function getDropXFromClient(clientX) {
+  const game = document.getElementById("pet-game");
+  if (!game) return "50%";
+
+  const rect = game.getBoundingClientRect();
+  const x = clientX - rect.left;
+
+  const clamped = Math.max(0, Math.min(rect.width, x));
+  return `${clamped}px`;
+}
 
 /* --------------------------------------
    ACTION ROW (meter → actions)
@@ -776,12 +809,15 @@ function setupFeedingSession() {
 
 
 function dropOne() {
+   showFeedingFoodCount();
+
   if (!isFeeding || feedingDropsRemaining <= 0) {
     stopDropping();
     return;
   }
 
   feedingDropsRemaining--;
+showFeedingFoodCount();
 
   spawnFoodPiece(success => {
     if (success) feedingHits++;
