@@ -3,6 +3,7 @@
    Handles screens, rendering, interactions
    No persistence, no server authority (yet)
 ====================================================== */
+"use strict";
 
 import { getStarterPets, createPet } from "./pet.js";
 import { connect, sendChat, onChat, onPresence } from "./net.js";
