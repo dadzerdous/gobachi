@@ -7,6 +7,7 @@
 
 import { getStarterPets, createPet } from "./pet.js";
 import { connect, sendChat, onChat, onPresence } from "./net.js";
+import { createFeedingSession } from "./feedingcore.js";
 
 /* --------------------------------------
    DOM REFERENCES
@@ -46,11 +47,6 @@ const actionRow = document.getElementById("action-row");
 -------------------------------------- */
 let isFeeding = false;
 let feedingTimer = null;
-let feedingPhase = "idle";
-let pointerHeld = false;
-let activeCaretakers = new Set();
-
-
 
 let starterEmojis  = [];
 let selectedIndex  = 0;
@@ -65,6 +61,9 @@ let fakeMeters = {
   needs:  4,
   mood:   4
 };
+
+let decayInterval = null;
+let decayStarted = false;
 
 // TEMP: food resource (local-only testing)
 let foodCount = 0;
@@ -143,6 +142,124 @@ function renderChatEntry(msg) {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
+// --------------------------------------
+// FEED COOP SIGNALS (chat-driven)
+// --------------------------------------
+// Messages we broadcast:
+//  __feed_start__:KEY:ENDS_AT_MS:HOST_EMOJI
+//  __feed_join__:KEY
+//  __feed_begin__:KEY
+
+function handleFeedSignals(msg) {
+  const text = String(msg?.text || "");
+  if (!text.startsWith("__feed_")) return false;
+
+  // Always treat these as system-level (don’t render raw tokens)
+  if (text.startsWith("__feed_start__")) {
+    const parts = text.split(":");
+    const key = parts[1] || "";
+    const endsAt = Number(parts[2] || 0);
+    const hostEmoji = parts[3] || "👻";
+    if (!key || !Number.isFinite(endsAt)) return true;
+
+    showFeedJoinInvite({ key, endsAt, hostEmoji });
+    return true;
+  }
+
+  if (text.startsWith("__feed_join__")) {
+    const parts = text.split(":");
+    const key = parts[1] || "";
+    if (!key) return true;
+
+    // Host-side: register caretaker during join window.
+    if (isFeeding && feedingSession && feedingSession.key === key) {
+      const caretakerId = String(msg?.id || msg?.sender || msg?.socketId || msg?.emoji || "").trim();
+      const caretakerEmoji = msg?.emoji || "👻";
+      if (caretakerId) {
+        feedingSession.join({ id: caretakerId, emoji: caretakerEmoji });
+        renderJoiners(feedingSession.snapshot().caretakers);
+      }
+    }
+
+    return true;
+  }
+
+  if (text.startsWith("__feed_begin__")) {
+    const parts = text.split(":");
+    const key = parts[1] || "";
+    if (!key) return true;
+
+    // Joining closed everywhere.
+    disableFeedJoinButton(key);
+    return true;
+  }
+
+  return true;
+}
+
+function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
+  if (!chatMessages) return;
+
+  const line = document.createElement("div");
+  line.className = "chat-line system";
+  line.dataset.feedKey = key;
+
+  const title = document.createElement("span");
+  title.className = "chat-text";
+  title.textContent = `${hostEmoji} started feeding — `;
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "join-link";
+  btn.textContent = "Join";
+  btn.onclick = () => {
+    if (btn.disabled) return;
+    // Send join signal; server will broadcast back to host.
+    sendChat({
+      emoji: currentPet ? currentPet.emoji : "👻",
+      text: `__feed_join__:${key}`
+    });
+    btn.disabled = true;
+    btn.classList.add("disabled");
+    btn.textContent = "Joined";
+  };
+
+  const timer = document.createElement("span");
+  timer.className = "chat-text";
+  timer.style.opacity = "0.8";
+  timer.style.marginLeft = "6px";
+
+  line.appendChild(document.createElement("span")); // keeps spacing consistent
+  line.appendChild(title);
+  line.appendChild(btn);
+  line.appendChild(timer);
+  chatMessages.appendChild(line);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  feedJoinButtons.set(key, btn);
+
+  // countdown
+  const tick = () => {
+    const seconds = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+    timer.textContent = `(${seconds})`;
+    if (seconds <= 0) {
+      disableFeedJoinButton(key);
+      clearInterval(iv);
+    }
+  };
+  tick();
+  const iv = setInterval(tick, 250);
+}
+
+function disableFeedJoinButton(key) {
+  const btn = feedJoinButtons.get(key);
+  if (!btn) return;
+  btn.disabled = true;
+  btn.classList.add("disabled");
+  btn.textContent = "Closed";
+  feedJoinButtons.delete(key);
+}
+
 function toggleChat(open) {
   chatOpen = open;
   if (!chatOverlay) return;
@@ -162,53 +279,6 @@ function toggleChat(open) {
 /* --------------------------------------
    METERS
 -------------------------------------- */
-function buildFeedingStats({ percent, players }) {
-  const rating =
-    percent >= 75 ? "success" :
-    percent >= 30 ? "neutral" :
-    "fail";
-
-  return {
-    rating,
-    percent,
-    players,
-    drops: feedingTotalDrops,
-    hits: feedingHits,
-    misses: feedingTotalDrops - feedingHits
-  };
-}
-function clearFeedingGameplay() {
-  // remove bowl, fuse, food, counters — but NOT results
-  document.querySelector(".bowl-area")?.remove();
-  document.getElementById("fuse-bar")?.remove();
-  document.getElementById("feeding-food-count")?.remove();
-  document.querySelectorAll(".food-piece").forEach(el => el.remove());
-}
-
-function showFeedingStatsPanel(stats) {
-  const panel = document.createElement("div");
-  panel.className = "feeding-stats";
-
-  panel.innerHTML = `
-    <div class="feeding-rating ${stats.rating}">
-      ${stats.rating.toUpperCase()}
-    </div>
-
-    <div class="feeding-lines">
-      <div>🎯 Accuracy: ${stats.percent}%</div>
-      <div>🍖 Caught: ${stats.hits} / ${stats.drops}</div>
-      <div>👥 Caretakers: ${stats.players}</div>
-    </div>
-  `;
-
-  feedingField.appendChild(panel);
-
-  setTimeout(() => panel.classList.add("show"), 10);
-  setTimeout(() => panel.remove(), 2200);
-}
-
-
-
 
 function setMeter(name, level) {
   const el = document.querySelector(`.meter[data-meter="${name}"]`);
@@ -230,8 +300,7 @@ function setFeedButtonDisabled(disabled) {
   btn.classList.toggle("disabled", disabled);
 }
 function showBowl() {
-  const game = feedingField;
-
+  const game = document.getElementById("pet-game");
   if (!game) return;
 
   game.innerHTML = `
@@ -262,8 +331,7 @@ let fuseRAF = null;
 let fuseStartTime = 0;
 
 function startFuse() {
-  const game = feedingField;
-
+  const game = document.getElementById("pet-game");
   if (!game) return;
 
   let fuse = document.getElementById("fuse-bar");
@@ -295,63 +363,42 @@ function startFuse() {
 function endFeedingFromTimer() {
   if (!isFeeding) return;
 
-  const percent = feedingTotalDrops > 0
-    ? Math.round((feedingHits / feedingTotalDrops) * 100)
-    : 0;
-
-  resolveFeeding({
-  percent,
-  players: Math.max(1, activeCaretakers.size),
-  skipped: false
-});
-
-}
-function getFeedingResultLabel(percent) {
-  if (percent >= 75) return { text: "SUCCESS", class: "feed-success" };
-  if (percent >= 30) return { text: "OKAY",    class: "feed-neutral" };
-  return               { text: "FAILED",  class: "feed-fail" };
-}
-function showFeedingResult(percent) {
-  const { text, class: cls } = getFeedingResultLabel(percent);
-
-  const el = document.createElement("div");
-  el.className = `feeding-result ${cls}`;
-  el.textContent = text;
-
-  feedingField.appendChild(el);
-
-  setTimeout(() => el.remove(), 900);
+  resolveFeeding({ skipped: false });
 }
 
-function showPressPrompt() {
-  const game = feedingField;
+function showPressPrompt(seconds = null) {
+  // Render on feedingField so it survives bowl/game DOM wipes.
+  if (!feedingField) return;
 
-  if (!game) return;
+  let prompt = document.getElementById("press-prompt");
+  if (!prompt) {
+    prompt = document.createElement("div");
+    prompt.id = "press-prompt";
 
-  const prompt = document.createElement("div");
-  prompt.id = "press-prompt";
-  prompt.textContent = "PRESS";
+    Object.assign(prompt.style, {
+      position: "absolute",
+      inset: "0",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "32px",
+      fontWeight: "800",
+      letterSpacing: "2px",
+      color: "#fff",
+      background: "rgba(0,0,0,0.35)",
+      animation: "pulse 0.6s ease-in-out infinite",
+      pointerEvents: "none",
+      zIndex: 5
+    });
 
-  Object.assign(prompt.style, {
-    position: "absolute",
-    inset: "0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "32px",
-    fontWeight: "800",
-    letterSpacing: "2px",
-    color: "#fff",
-    background: "rgba(0,0,0,0.35)",
-    animation: "pulse 0.6s ease-in-out infinite",
-    pointerEvents: "none"
-  });
+    feedingField.appendChild(prompt);
+  }
 
-  game.appendChild(prompt);
+  const s = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : null;
+  prompt.textContent = s === null ? "PRESS" : `PRESS ${s}`;
 }
 function spawnSpark() {
-  const game = feedingField;
-
+  const game = document.getElementById("pet-game");
   const bowlArea = document.querySelector(".bowl-area");
   if (!game || !bowlArea) return;
 
@@ -383,8 +430,7 @@ function hidePressPrompt() {
 }
 
 function hideBowl() {
-  const game = feedingField;
-
+  const game = document.getElementById("pet-game");
   if (!game) return;
 
   game.innerHTML = "";
@@ -392,10 +438,7 @@ function hideBowl() {
 
 
 function spawnFoodPiece(onResult) {
-   console.log("🍖 drop", feedingDropsRemaining);
-
-  const game = feedingField;
-
+  const game = document.getElementById("pet-game");
   if (!game) return;
 
   const piece = document.createElement("div");
@@ -451,27 +494,93 @@ setTimeout(() => {
 }
 
 function showFeedingFoodCount() {
-  const game = feedingField;
-
-  if (!game) return;
+  if (!feedingField) return;
 
   let counter = document.getElementById("feeding-food-count");
   if (!counter) {
     counter = document.createElement("div");
     counter.id = "feeding-food-count";
-    game.appendChild(counter);
+    feedingField.appendChild(counter);
   }
 
-  counter.textContent = `🍖 × ${feedingDropsRemaining}`;
+  counter.textContent = `🍖 ${feedingDropsRemaining}`;
 }
 
 function hideFeedingFoodCount() {
   const counter = document.getElementById("feeding-food-count");
   if (counter) counter.remove();
 }
-function getDropXFromClient(clientX) {
-  const game = feedingField;
 
+function renderJoiners(caretakers) {
+  if (!feedingField) return;
+
+  let box = document.getElementById("feeding-joiners");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "feeding-joiners";
+    feedingField.appendChild(box);
+  }
+
+  const list = Array.isArray(caretakers) ? caretakers : [];
+  // show up to 6, then +N
+  const emojis = list.map(x => x.emoji).filter(Boolean);
+  const show = emojis.slice(0, 6);
+  const extra = Math.max(0, emojis.length - show.length);
+  box.textContent = extra > 0 ? `${show.join(" ")} +${extra}` : show.join(" ");
+}
+
+function clearJoiners() {
+  const box = document.getElementById("feeding-joiners");
+  if (box) box.remove();
+}
+
+function disableAllFeedJoinButtons() {
+  for (const btn of feedJoinButtons.values()) {
+    if (!btn) continue;
+    btn.disabled = true;
+    btn.classList.add("disabled");
+    btn.textContent = "Joined closed";
+  }
+  feedJoinButtons.clear();
+}
+
+// Results overlay helpers (15s, click-to-skip)
+let resultsOverlay = null;
+
+function showResultsOverlay({ rating, lines }) {
+  if (!feedingField) return;
+
+  if (!resultsOverlay) {
+    resultsOverlay = document.createElement("div");
+    resultsOverlay.id = "feeding-results";
+    resultsOverlay.className = "feeding-stats show";
+    resultsOverlay.innerHTML = `
+      <div class="feeding-rating" id="feeding-rating"></div>
+      <div class="feeding-lines" id="feeding-lines"></div>
+      <div class="feeding-lines" id="feeding-results-timer" style="opacity:0.8"></div>
+    `;
+    feedingField.appendChild(resultsOverlay);
+  }
+
+  const ratingEl = document.getElementById("feeding-rating");
+  const linesEl = document.getElementById("feeding-lines");
+  if (ratingEl) ratingEl.textContent = rating;
+  if (linesEl) linesEl.textContent = lines.join("\n");
+}
+
+function updateResultsCountdown(seconds) {
+  const el = document.getElementById("feeding-results-timer");
+  if (el) el.textContent = `tap to close (${seconds})`;
+}
+
+function hideResultsOverlay() {
+  if (resultsOverlay) {
+    resultsOverlay.remove();
+    resultsOverlay = null;
+  }
+}
+function getDropXFromClient(clientX) {
+  const game = document.getElementById("pet-game");
   if (!game) return "50%";
 
   const rect = game.getBoundingClientRect();
@@ -628,19 +737,18 @@ function bindMeterActions() {
    FAKE DECAY (TESTING ONLY)
 -------------------------------------- */
 
-let decayInterval = null;
-
 function startFakeDecay() {
-  if (decayInterval) return;
+  if (decayStarted) return;
+  decayStarted = true;
 
   decayInterval = setInterval(() => {
+    // gentle decay on needs (visual testing)
     if (fakeMeters.needs > 0) {
       fakeMeters.needs -= 1;
       setMeter("needs", fakeMeters.needs);
     }
   }, 15000);
 }
-
 
 /* --------------------------------------
    SCREEN CONTROL
@@ -757,7 +865,9 @@ function showPetView() {
 
   // ensure action row is hidden when entering pet view
   hideActionRow();
-     startFakeDecay();
+
+  // Start decay only after a pet exists / pet view is entered
+  startFakeDecay();
 }
 
 /* --------------------------------------
@@ -803,38 +913,10 @@ export function startUI() {
   // Networking
   connect();
 
-  onChat(msg => {
-  // 🧑‍🤝‍🧑 COOP FEEDING SIGNAL
-  if (msg.text === "__feed__" && isFeeding) {
- const id = msg.id || msg.sender || `${msg.emoji}-${Date.now()}`;
-activeCaretakers.add(id);
-console.log("Caretakers:", [...activeCaretakers]);
-
-
-    // simulate a successful contribution
-    feedingHits++;
-    feedingFinished++;
-    showFeedingFoodCount();
-
-    if (feedingFinished >= feedingTotalDrops) {
-      const percent = feedingTotalDrops > 0
-        ? Math.round((feedingHits / feedingTotalDrops) * 100)
-        : 0;
-
-      resolveFeeding({
-        percent,
-        players: Math.max(1, activeCaretakers.size),
-        skipped: false
-      });
-    }
-
-    return; // ❌ do NOT render this in chat
-  }
-
-  // normal chat
-  renderChatEntry(msg);
-});
-
+  onChat((msg) => {
+    const skip = handleFeedSignals(msg);
+    if (!skip) renderChatEntry(msg);
+  });
 
   onPresence(count => {
     const el = document.getElementById("presence");
@@ -883,7 +965,6 @@ if (chatToggle) {
     });
   }
 
-
 }
 
 // feeding
@@ -893,56 +974,65 @@ let bowlSpeed = 0.5; // tweak this
 let bowlRAF = null;
 
 // ----------------------------
-// FEEDING SESSION STATE (v2)
+// FEEDING SESSION (EXTRACTED)
 // ----------------------------
+let feedingSession = null;
+
 let feedingTotalDrops = 0;
 let feedingDropsRemaining = 0;
 let feedingHits = 0;
 let feedingFinished = 0;
-let lastDropClientX = null;
 
 let dropInterval = null;
-let feedingArmed = false;       // "PRESS" is showing, waiting for first press/hold
 let feedingInputBound = false;
 
-const FEEDING_TOTAL_DROPS = 50;   // 🔧 tune this (start at 20)
-const DROP_INTERVAL_MS = 180;     // 🔧 tune this (180 feels more “Quick Drop”)
-const FEEDING_SESSION_MS = 8000;  // 🔧 timer: auto-end after 8s
-const PRESS_DELAY_MS = 220;       // small WarioWare beat
+let pointerHeld = false;
+let lastDropClientX = null;
+let activeCaretakers = new Set();
+
+// invite/join UI in chat
+const feedJoinButtons = new Map(); // key -> button element
+
+const FEED_JOIN_MS = 15000;        // "PRESS" window / join window
+const FEED_RESULTS_MS = 15000;     // results screen time
+const FEEDING_TOTAL_DROPS = 50;
+const DROP_INTERVAL_MS = 180;
+const FEEDING_SESSION_MS = 8000;
 
 function bindFeedingInputOnce() {
   if (feedingInputBound) return;
   feedingInputBound = true;
 
+  // We bind to the feeding layer so mobile presses always register
   if (!feedingField) return;
 
-feedingField.addEventListener("pointerdown", e => {
-  pointerHeld = true;
-  lastDropClientX = e.clientX;
+  feedingField.addEventListener("pointerdown", (e) => {
+    pointerHeld = true;
+    lastDropClientX = e.clientX;
 
-  // ✅ CRITICAL FOR MOBILE
-  feedingField.setPointerCapture(e.pointerId);
+    // mobile reliability
+    try { feedingField.setPointerCapture(e.pointerId); } catch {}
 
-  activeCaretakers.add("local");
-  startDropping();
-});
+    // If we're still in join/press window, host click can force-start.
+    if (isFeeding && feedingSession && feedingSession.snapshot().phase === "joining") {
+      feedingSession.forceStart({ by: "host" });
+      // dropping will begin automatically if pointer is held when active starts
+      return;
+    }
 
-
-  feedingField.addEventListener("pointermove", e => {
-    if (!pointerHeld) return;
-    lastDropClientX = e.clientX; // ✅ THIS is the missing piece
+    startDropping();
   });
 
-feedingField.addEventListener("pointerup", e => {
-  pointerHeld = false;
+  feedingField.addEventListener("pointermove", (e) => {
+    if (!pointerHeld) return;
+    lastDropClientX = e.clientX;
+  });
 
-  // ✅ release capture
-  try {
-    feedingField.releasePointerCapture(e.pointerId);
-  } catch {}
-
-  stopDropping();
-});
+  feedingField.addEventListener("pointerup", (e) => {
+    pointerHeld = false;
+    try { feedingField.releasePointerCapture(e.pointerId); } catch {}
+    stopDropping();
+  });
 
   feedingField.addEventListener("pointerleave", () => {
     pointerHeld = false;
@@ -955,28 +1045,115 @@ feedingField.addEventListener("pointerup", e => {
   });
 }
 
-
-
 function setupFeedingSession() {
-   feedingArmed = true;
-
   feedingTotalDrops = FEEDING_TOTAL_DROPS;
   feedingDropsRemaining = feedingTotalDrops;
   feedingHits = 0;
   feedingFinished = 0;
 
+  activeCaretakers.clear();
+  activeCaretakers.add("local");
+
   hideBowl();
   stopBowlMovement();
 
-  showPressPrompt();
+  // (re)create extracted session
+  feedingSession = createFeedingSession({
+    joinMs: FEED_JOIN_MS,
+    resultMs: FEED_RESULTS_MS,
+    totalDrops: FEEDING_TOTAL_DROPS,
+    coopBonusPerPlayer: COOP_BONUS_PER_PLAYER,
+    coopBonusCap: COOP_BONUS_CAP,
 
+    onPhase(phase, meta) {
+      if (phase === "joining") {
+        // render press/join countdown
+        renderJoiners(meta.snapshot.caretakers);
+        showPressPrompt(secondsFromEndsAt(meta.snapshot.joinEndsAt));
+        return;
+      }
+
+      if (phase === "active") {
+        hidePressPrompt();
+        disableAllFeedJoinButtons();
+
+        // If host started early, broadcast the "started" system message.
+        if (meta.startedEarly) {
+          sendChat({
+            emoji: "⚙️",
+            text: `${meta.snapshot.host.emoji} started their feeding session`
+          });
+        }
+
+        // tell others: joining is now closed
+        sendChat({
+          emoji: "⚙️",
+          text: `__feed_begin__:${feedingSession.key}`
+        });
+
+        showBowl();
+        startBowlMovement();
+        startFuse();
+
+        // If the pointer was already held during PRESS, begin dropping immediately.
+        if (pointerHeld) startDropping();
+
+        // hard stop timer (in addition to fuse)
+        clearTimeout(feedingTimer);
+        feedingTimer = setTimeout(() => {
+          if (!isFeeding) return;
+          resolveFeeding({ skipped: false });
+        }, FEEDING_SESSION_MS);
+
+        return;
+      }
+
+      if (phase === "results") {
+        // countdown shown by onResultsTick
+        return;
+      }
+
+      if (phase === "idle") {
+        // Session ended (usually after results timeout)
+        hideResultsOverlay();
+        setFeedButtonDisabled(false);
+        // If we're still in feeding UI, close it cleanly
+        if (isFeeding) exitFeedingMode();
+        feedingSession = null;
+      }
+    },
+
+    onJoinTick(t) {
+      showPressPrompt(t.seconds);
+      renderJoiners(t.snapshot.caretakers);
+    },
+
+    onResultsTick(t) {
+      updateResultsCountdown(t.seconds);
+    }
+  });
+
+  // start join phase locally
+  const hostEmoji = currentPet ? currentPet.emoji : "👻";
+  feedingSession.startJoining({ hostId: "local", hostEmoji });
+
+  // broadcast invite to others
+  sendChat({
+    emoji: "⚙️",
+    text: `__feed_start__:${feedingSession.key}:${Date.now() + FEED_JOIN_MS}:${hostEmoji}`
+  });
+}
+
+function secondsFromEndsAt(endsAt) {
+  const ms = (endsAt || 0) - Date.now();
+  return Math.max(0, Math.ceil(ms / 1000));
 }
 
 
 
 function dropOne() {
-  if (!isFeeding) return;
-  if (feedingArmed) return; // ⛔ cannot drop until game is live
+  if (!isFeeding || !feedingSession) return;
+  if (feedingSession.snapshot().phase !== "active") return;
 
   if (feedingDropsRemaining <= 0) {
     stopDropping();
@@ -987,66 +1164,28 @@ function dropOne() {
   showFeedingFoodCount();
 
   spawnFoodPiece(success => {
-    if (success) feedingHits++;
+    feedingSession.registerDrop({ success });
+
     feedingFinished++;
+    if (success) feedingHits++;
 
     bowlPop(success);
 
-    if (feedingFinished >= feedingTotalDrops) {
-      const percent = feedingTotalDrops > 0
-        ? Math.round((feedingHits / feedingTotalDrops) * 100)
-        : 0;
-
-      resolveFeeding({
-  percent,
-  players: Math.max(1, activeCaretakers.size),
-  skipped: false
-});
-
+    if (feedingSession.isComplete()) {
+      resolveFeeding({ skipped: false });
     }
   });
 }
 
-
 function startDropping() {
-  if (!isFeeding) return;
-
-  // FIRST PRESS: start round
-if (feedingArmed) {
-  feedingArmed = false;
-  hidePressPrompt();
-
-  showBowl();
-  startBowlMovement();
-  startFuse();
-
-  clearTimeout(feedingTimer);
-  feedingTimer = setTimeout(() => {
-    if (!isFeeding) return;
-
-    const percent = feedingTotalDrops > 0
-      ? Math.round((feedingHits / feedingTotalDrops) * 100)
-      : 0;
-
-    resolveFeeding({
-  percent,
-  players: Math.max(1, activeCaretakers.size),
-  skipped: false
-});
-
-  }, FEEDING_SESSION_MS);
-
-  // ✅ IMPORTANT: do not return — let dropping begin naturally
-}
-
+  if (!isFeeding || !feedingSession) return;
+  if (feedingSession.snapshot().phase !== "active") return;
 
   if (dropInterval) return;
 
   dropOne();
   dropInterval = setInterval(dropOne, DROP_INTERVAL_MS);
 }
-
-
 
 
 function stopDropping() {
@@ -1063,6 +1202,10 @@ function enterFeedingMode() {
   // show feeding layer
   feedingField.classList.remove("hidden");
 
+  // ensure HUD bits exist immediately
+  showFeedingFoodCount();
+  renderJoiners([]);
+
   // disable action row (visible but inert)
   actionRow?.querySelectorAll("button").forEach(btn => {
     btn.disabled = true;
@@ -1075,14 +1218,14 @@ function enterFeedingMode() {
 function exitFeedingMode() {
   stopDropping();
   hidePressPrompt();
+  hideFeedingFoodCount();
+  clearJoiners();
+  hideResultsOverlay();
   clearTimeout(feedingTimer);
-feedingField.classList.remove("feeding-results-mode");
 
   isFeeding = false;
 
   petEmojiEl.style.display = "";
-
-  // 👇 DO NOT wipe the feeding field yet
   feedingField.classList.add("hidden");
 
   actionRow?.querySelectorAll("button").forEach(btn => {
@@ -1091,8 +1234,8 @@ feedingField.classList.remove("feeding-results-mode");
   });
 
   stopBowlMovement();
+  hideBowl();
 }
-
 
 
 
@@ -1140,60 +1283,66 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
 enterFeedingMode();
 bindFeedingInputOnce();
 setupFeedingSession();
-   activeCaretakers.clear();
-
 
 systemChat(
   isCommunity
-    ? "feeding has begun for the community pet"
-    : "feeding has begun"
+    ? "feeding session opened for the community pet (15s)"
+    : "feeding session opened (15s) — press to start"
 );
 
 }
 
-function resolveFeeding({ percent, players, skipped }) {
+function resolveFeeding({ skipped }) {
   clearTimeout(feedingTimer);
-     stopDropping();
-  feedingField.classList.add("feeding-results-mode");
-  // ✅ NEW: remove active gameplay visuals immediately
-  clearFeedingGameplay();
-  setFeedButtonDisabled(false);
+  stopDropping();
 
-  const coopBonus = Math.min(
-    players * COOP_BONUS_PER_PLAYER,
-    COOP_BONUS_CAP
-  );
+  // If we somehow end during join phase, just bail cleanly.
+  if (!feedingSession) {
+    setFeedButtonDisabled(false);
+    exitFeedingMode();
+    return;
+  }
 
-  const finalPercent = percent + coopBonus;
+  // stop visuals before showing results
+  stopBowlMovement();
+  hideBowl();
+  hidePressPrompt();
+  hideFeedingFoodCount();
+  clearJoiners();
 
-  const stats = buildFeedingStats({
-    percent: finalPercent,
-    players
-  });
+  const results = feedingSession.getResults();
+  const percent = results.basePercent;
+  const finalPercent = results.finalPercent;
+  const players = results.players;
+  const coopBonus = results.coopBonus;
 
-  // SHOW RESULTS FIRST
-  showFeedingResult(finalPercent);   // big word
-  showFeedingStatsPanel(stats);      // detailed breakdown
-
-setTimeout(() => {
-  exitFeedingMode();
-  feedingField.innerHTML = ""; // ✅ clear AFTER results
-}, 3200);
-
-
-  // hunger gain
+  // hunger gain (simple scale for now)
   const hungerGain = Math.round(finalPercent / 25); // 0–4
   fakeMeters.needs = Math.min(4, fakeMeters.needs + hungerGain);
   setMeter("needs", fakeMeters.needs);
 
   // mood effects
-  if (!skipped && finalPercent === 0) {
+  if (!skipped && percent === 0) {
     fakeMeters.mood = Math.max(0, fakeMeters.mood - 1);
     setMeter("mood", fakeMeters.mood);
     flashPetFail();
   } else {
     flashPetSuccess();
   }
+
+  // On-screen rating (15s, tap to close)
+  const rating = finalPercent >= FEED_RESULTS.perfect ? "PERFECT" :
+                 finalPercent >= FEED_RESULTS.success ? "SUCCESS" :
+                 finalPercent >= FEED_RESULTS.partial ? "NEUTRAL" :
+                 "FAIL";
+
+  const lines = [
+    `${rating} — ${finalPercent}%`,
+    `caught ${results.hits}/${results.drops}`,
+    `${players} caretaker${players > 1 ? "s" : ""} (+${coopBonus}%)`
+  ];
+
+  showResultsOverlay({ rating, lines });
 
   // chat feedback
   if (skipped) {
@@ -1205,8 +1354,26 @@ setTimeout(() => {
       `feeding complete — ${players} caretaker${players > 1 ? "s" : ""} helped (+${coopBonus}%)`
     );
   }
-}
 
+  // Start results countdown; tap to skip.
+  feedingSession.startResults();
+  updateResultsCountdown(Math.ceil(FEED_RESULTS_MS / 1000));
+
+  const clickToClose = () => {
+    if (!feedingSession) return;
+    if (feedingSession.snapshot().phase !== "results") return;
+    feedingSession.end();
+    cleanupAfterResults();
+  };
+
+  feedingField.addEventListener("pointerdown", clickToClose, { once: true });
+
+  function cleanupAfterResults() {
+    hideResultsOverlay();
+    setFeedButtonDisabled(false);
+    exitFeedingMode();
+  }
+}
 function flashPetFail() {
   document.body.classList.add("pet-flash-fail");
   setTimeout(() => {
