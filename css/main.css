@@ -509,8 +509,9 @@ body.chat-open #view {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  pointer-events: none;
+  pointer-events: auto; /* ✅ allow drops + visuals */
 }
+
 
 .bowl-area {
   position: absolute;
