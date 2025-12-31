@@ -138,9 +138,6 @@ function forceStart({ by = "host" } = {}) {
 }
 }
 
-    setPhase("active", { startedEarly, by });
-    return true;
-  }
 
   function registerDrop({ success } = {}) {
     if (phase !== "active") return;
