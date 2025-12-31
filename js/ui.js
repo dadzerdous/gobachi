@@ -797,7 +797,7 @@ let dropInterval = null;
 let feedingArmed = false;       // "PRESS" is showing, waiting for first press/hold
 let feedingInputBound = false;
 
-const FEEDING_TOTAL_DROPS = 20;   // 🔧 tune this (start at 20)
+const FEEDING_TOTAL_DROPS = 200;   // 🔧 tune this (start at 20)
 const DROP_INTERVAL_MS = 180;     // 🔧 tune this (180 feels more “Quick Drop”)
 const FEEDING_SESSION_MS = 8000;  // 🔧 timer: auto-end after 8s
 const PRESS_DELAY_MS = 220;       // small WarioWare beat
@@ -851,6 +851,7 @@ function setupFeedingSession() {
 
 
 function dropOne() {
+   if (!isFeeding) return;
    if (feedingArmed) {
   feedingArmed = false;
   hidePressPrompt();
