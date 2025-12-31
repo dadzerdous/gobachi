@@ -6,7 +6,7 @@
 "use strict";
 
 import { getStarterPets, createPet } from "./pet.js";
-import { connect, sendChat, onChat, onPresence} from "./net.js";
+import { connect, sendChat, onChat, onPresence, onStatus } from "./net.js";
 import { createFeedingSession } from "./feedingcore.js";
 
 /* --------------------------------------
