@@ -136,7 +136,7 @@ function forceStart({ by = "host" } = {}) {
   setPhase("active", { by });
   return true;
 }
-}
+
 
 
   function registerDrop({ success } = {}) {
