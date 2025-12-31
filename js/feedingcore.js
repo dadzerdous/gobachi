@@ -122,17 +122,21 @@ export function createFeedingSession(opts = {}) {
     return true;
   }
 
-  function forceStart({ by = "host" } = {}) {
-    if (phase !== "joining") return false;
+function forceStart({ by = "host" } = {}) {
+  if (phase !== "joining") return false;
 
-    const startedEarly = by === "host" && Date.now() < joinEndsAt;
+  // lock join phase
+  joinEndsAt = 0;
+  if (joinTimer) {
+    clearInterval(joinTimer);
+    joinTimer = null;
+  }
 
-    // lock join phase
-    joinEndsAt = 0;
-    if (joinTimer) {
-      clearInterval(joinTimer);
-      joinTimer = null;
-    }
+  // phase change only — no gameplay privilege
+  setPhase("active", { by });
+  return true;
+}
+}
 
     setPhase("active", { startedEarly, by });
     return true;
