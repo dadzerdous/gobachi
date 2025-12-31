@@ -178,7 +178,8 @@ function setFeedButtonDisabled(disabled) {
   btn.classList.toggle("disabled", disabled);
 }
 function showBowl() {
-  const game = document.getElementById("pet-game");
+  const game = feedingField;
+
   if (!game) return;
 
   game.innerHTML = `
@@ -209,7 +210,8 @@ let fuseRAF = null;
 let fuseStartTime = 0;
 
 function startFuse() {
-  const game = document.getElementById("pet-game");
+  const game = feedingField;
+
   if (!game) return;
 
   let fuse = document.getElementById("fuse-bar");
@@ -249,7 +251,8 @@ function endFeedingFromTimer() {
 }
 
 function showPressPrompt() {
-  const game = document.getElementById("pet-game");
+  const game = feedingField;
+
   if (!game) return;
 
   const prompt = document.createElement("div");
@@ -274,7 +277,8 @@ function showPressPrompt() {
   game.appendChild(prompt);
 }
 function spawnSpark() {
-  const game = document.getElementById("pet-game");
+  const game = feedingField;
+
   const bowlArea = document.querySelector(".bowl-area");
   if (!game || !bowlArea) return;
 
@@ -306,7 +310,8 @@ function hidePressPrompt() {
 }
 
 function hideBowl() {
-  const game = document.getElementById("pet-game");
+  const game = feedingField;
+
   if (!game) return;
 
   game.innerHTML = "";
@@ -316,7 +321,8 @@ function hideBowl() {
 function spawnFoodPiece(onResult) {
    console.log("🍖 drop", feedingDropsRemaining);
 
-  const game = document.getElementById("pet-game");
+  const game = feedingField;
+
   if (!game) return;
 
   const piece = document.createElement("div");
@@ -372,7 +378,8 @@ setTimeout(() => {
 }
 
 function showFeedingFoodCount() {
-  const game = document.getElementById("pet-game");
+  const game = feedingField;
+
   if (!game) return;
 
   let counter = document.getElementById("feeding-food-count");
@@ -390,7 +397,8 @@ function hideFeedingFoodCount() {
   if (counter) counter.remove();
 }
 function getDropXFromClient(clientX) {
-  const game = document.getElementById("pet-game");
+  const game = feedingField;
+
   if (!game) return "50%";
 
   const rect = game.getBoundingClientRect();
@@ -672,6 +680,7 @@ function showPetView() {
 
   // ensure action row is hidden when entering pet view
   hideActionRow();
+     startFakeDecay();
 }
 
 /* --------------------------------------
@@ -766,8 +775,7 @@ if (chatToggle) {
     });
   }
 
-  // Visual-only decay
-  startFakeDecay();
+
 }
 
 // feeding
@@ -843,7 +851,14 @@ function setupFeedingSession() {
 
 
 function dropOne() {
-   if (feedingArmed) return;
+   if (feedingArmed) {
+  feedingArmed = false;
+  hidePressPrompt();
+  showBowl();
+  startBowlMovement();
+  startFuse();
+}
+
 
    showFeedingFoodCount();
 
