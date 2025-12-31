@@ -48,6 +48,7 @@ let isFeeding = false;
 let feedingTimer = null;
 let feedingPhase = "idle";
 let pointerHeld = false;
+let activeCaretakers = new Set();
 
 
 
