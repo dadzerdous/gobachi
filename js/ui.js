@@ -798,7 +798,36 @@ export function startUI() {
   // Networking
   connect();
 
-  onChat(renderChatEntry);
+  onChat(msg => {
+  // 🧑‍🤝‍🧑 COOP FEEDING SIGNAL
+  if (msg.text === "__feed__" && isFeeding) {
+    const id = msg.emoji || "remote";
+    activeCaretakers.add(id);
+
+    // simulate a successful contribution
+    feedingHits++;
+    feedingFinished++;
+    showFeedingFoodCount();
+
+    if (feedingFinished >= feedingTotalDrops) {
+      const percent = feedingTotalDrops > 0
+        ? Math.round((feedingHits / feedingTotalDrops) * 100)
+        : 0;
+
+      resolveFeeding({
+        percent,
+        players: Math.max(1, activeCaretakers.size),
+        skipped: false
+      });
+    }
+
+    return; // ❌ do NOT render this in chat
+  }
+
+  // normal chat
+  renderChatEntry(msg);
+});
+
 
   onPresence(count => {
     const el = document.getElementById("presence");
@@ -880,11 +909,15 @@ function bindFeedingInputOnce() {
 
   if (!feedingField) return;
 
-  feedingField.addEventListener("pointerdown", e => {
-    pointerHeld = true;
-    lastDropClientX = e.clientX;
-    startDropping();
-  });
+feedingField.addEventListener("pointerdown", e => {
+  pointerHeld = true;
+  lastDropClientX = e.clientX;
+
+  activeCaretakers.add("local"); // ✅ THIS DEVICE counts
+
+  startDropping();
+});
+
 
   feedingField.addEventListener("pointermove", e => {
     if (!pointerHeld) return;
@@ -949,7 +982,12 @@ function dropOne() {
         ? Math.round((feedingHits / feedingTotalDrops) * 100)
         : 0;
 
-      resolveFeeding({ percent, players: 1, skipped: false });
+      resolveFeeding({
+  percent,
+  players: Math.max(1, activeCaretakers.size),
+  skipped: false
+});
+
     }
   });
 }
@@ -975,7 +1013,12 @@ if (feedingArmed) {
       ? Math.round((feedingHits / feedingTotalDrops) * 100)
       : 0;
 
-    resolveFeeding({ percent, players: 1, skipped: false });
+    resolveFeeding({
+  percent,
+  players: Math.max(1, activeCaretakers.size),
+  skipped: false
+});
+
   }, FEEDING_SESSION_MS);
 
   // ✅ IMPORTANT: do not return — let dropping begin naturally
@@ -1082,6 +1125,8 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
 enterFeedingMode();
 bindFeedingInputOnce();
 setupFeedingSession();
+   activeCaretakers.clear();
+
 
 systemChat(
   isCommunity
