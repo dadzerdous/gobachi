@@ -20,9 +20,6 @@ function emit(kind, payload) {
     try { fn(payload); } catch (e) { console.error("listener error:", e); }
   });
 }
-export function onStatus(fn) {
-  statusHandlers.push(fn);
-}
 
 export function connect() {
   if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
