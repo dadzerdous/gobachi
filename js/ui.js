@@ -806,8 +806,10 @@ export function startUI() {
   onChat(msg => {
   // 🧑‍🤝‍🧑 COOP FEEDING SIGNAL
   if (msg.text === "__feed__" && isFeeding) {
-    const id = msg.emoji || "remote";
-    activeCaretakers.add(id);
+ const id = msg.id || msg.sender || `${msg.emoji}-${Date.now()}`;
+activeCaretakers.add(id);
+console.log("Caretakers:", [...activeCaretakers]);
+
 
     // simulate a successful contribution
     feedingHits++;
@@ -918,8 +920,10 @@ feedingField.addEventListener("pointerdown", e => {
   pointerHeld = true;
   lastDropClientX = e.clientX;
 
-  activeCaretakers.add("local"); // ✅ THIS DEVICE counts
+  // ✅ CRITICAL FOR MOBILE
+  feedingField.setPointerCapture(e.pointerId);
 
+  activeCaretakers.add("local");
   startDropping();
 });
 
@@ -929,10 +933,16 @@ feedingField.addEventListener("pointerdown", e => {
     lastDropClientX = e.clientX; // ✅ THIS is the missing piece
   });
 
-  feedingField.addEventListener("pointerup", () => {
-    pointerHeld = false;
-    stopDropping();
-  });
+feedingField.addEventListener("pointerup", e => {
+  pointerHeld = false;
+
+  // ✅ release capture
+  try {
+    feedingField.releasePointerCapture(e.pointerId);
+  } catch {}
+
+  stopDropping();
+});
 
   feedingField.addEventListener("pointerleave", () => {
     pointerHeld = false;
