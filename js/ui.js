@@ -870,28 +870,30 @@ function bindFeedingInputOnce() {
   if (feedingInputBound) return;
   feedingInputBound = true;
 
-playfield.addEventListener("pointerdown", e => {
-  pointerHeld = true;
-  lastDropClientX = e.clientX;
-  startDropping();
-});
+  if (!feedingField) return;
 
-playfield.addEventListener("pointerup", () => {
-  pointerHeld = false;
-  stopDropping();
-});
+  feedingField.addEventListener("pointerdown", e => {
+    pointerHeld = true;
+    lastDropClientX = e.clientX;
+    startDropping();
+  });
 
-playfield.addEventListener("pointerleave", () => {
-  pointerHeld = false;
-  stopDropping();
-});
+  feedingField.addEventListener("pointerup", () => {
+    pointerHeld = false;
+    stopDropping();
+  });
 
-playfield.addEventListener("pointercancel", () => {
-  pointerHeld = false;
-  stopDropping();
-});
+  feedingField.addEventListener("pointerleave", () => {
+    pointerHeld = false;
+    stopDropping();
+  });
 
+  feedingField.addEventListener("pointercancel", () => {
+    pointerHeld = false;
+    stopDropping();
+  });
 }
+
 
 function setupFeedingSession() {
    feedingArmed = true;
