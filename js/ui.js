@@ -1086,27 +1086,36 @@ systemChat(
 
 function resolveFeeding({ percent, players, skipped }) {
   clearTimeout(feedingTimer);
+  setFeedButtonDisabled(false);
 
-   setFeedButtonDisabled(false);
-   showFeedingResult(percent);
-   setTimeout(() => {
-  exitFeedingMode();
-}, 1000);
-  const coopBonus = Math.min(players * COOP_BONUS_PER_PLAYER, COOP_BONUS_CAP);
+  const coopBonus = Math.min(
+    players * COOP_BONUS_PER_PLAYER,
+    COOP_BONUS_CAP
+  );
+
   const finalPercent = percent + coopBonus;
-   const stats = buildFeedingStats({ percent, players });
 
-showFeedingResult(percent);      // big word
-showFeedingStatsPanel(stats);    // detailed breakdown
+  const stats = buildFeedingStats({
+    percent: finalPercent,
+    players
+  });
 
+  // SHOW RESULTS FIRST
+  showFeedingResult(finalPercent);   // big word
+  showFeedingStatsPanel(stats);      // detailed breakdown
 
-  // hunger gain (simple scale for now)
+  // DELAY CLEANUP so results are visible
+  setTimeout(() => {
+    exitFeedingMode();
+  }, 1400);
+
+  // hunger gain
   const hungerGain = Math.round(finalPercent / 25); // 0–4
   fakeMeters.needs = Math.min(4, fakeMeters.needs + hungerGain);
   setMeter("needs", fakeMeters.needs);
 
   // mood effects
-  if (!skipped && percent === 0) {
+  if (!skipped && finalPercent === 0) {
     fakeMeters.mood = Math.max(0, fakeMeters.mood - 1);
     setMeter("mood", fakeMeters.mood);
     flashPetFail();
@@ -1117,7 +1126,7 @@ showFeedingStatsPanel(stats);    // detailed breakdown
   // chat feedback
   if (skipped) {
     systemChat("feeding skipped — the pet eats a little");
-  } else if (percent === 0) {
+  } else if (finalPercent === 0) {
     systemChat("feeding failed — the pet turns away");
   } else {
     systemChat(
@@ -1125,6 +1134,7 @@ showFeedingStatsPanel(stats);    // detailed breakdown
     );
   }
 }
+
 function flashPetFail() {
   document.body.classList.add("pet-flash-fail");
   setTimeout(() => {
