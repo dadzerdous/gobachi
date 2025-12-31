@@ -628,15 +628,19 @@ function bindMeterActions() {
    FAKE DECAY (TESTING ONLY)
 -------------------------------------- */
 
+let decayInterval = null;
+
 function startFakeDecay() {
-  setInterval(() => {
-    // gentle decay on needs (visual testing)
+  if (decayInterval) return;
+
+  decayInterval = setInterval(() => {
     if (fakeMeters.needs > 0) {
       fakeMeters.needs -= 1;
       setMeter("needs", fakeMeters.needs);
     }
   }, 15000);
 }
+
 
 /* --------------------------------------
    SCREEN CONTROL
@@ -1106,10 +1110,11 @@ function resolveFeeding({ percent, players, skipped }) {
   showFeedingResult(finalPercent);   // big word
   showFeedingStatsPanel(stats);      // detailed breakdown
 
-  // DELAY CLEANUP so results are visible
-  setTimeout(() => {
-    exitFeedingMode();
-  }, 1400);
+setTimeout(() => {
+  exitFeedingMode();
+  feedingField.innerHTML = ""; // ✅ clear AFTER results
+}, 1600);
+
 
   // hunger gain
   const hungerGain = Math.round(finalPercent / 25); // 0–4
