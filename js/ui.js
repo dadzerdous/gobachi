@@ -168,14 +168,15 @@ function buildFeedingStats({ percent, players }) {
     "fail";
 
   return {
-    rating,          // "success" | "neutral" | "fail"
-    percent,         // raw performance
-    players,         // coop count
+    rating,
+    percent,
+    players,
     drops: feedingTotalDrops,
     hits: feedingHits,
     misses: feedingTotalDrops - feedingHits
   };
 }
+
 function showFeedingStatsPanel(stats) {
   const panel = document.createElement("div");
   panel.className = "feeding-stats";
