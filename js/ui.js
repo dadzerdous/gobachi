@@ -299,7 +299,12 @@ function endFeedingFromTimer() {
     ? Math.round((feedingHits / feedingTotalDrops) * 100)
     : 0;
 
-  resolveFeeding({ percent, players: 1, skipped: false });
+  resolveFeeding({
+  percent,
+  players: Math.max(1, activeCaretakers.size),
+  skipped: false
+});
+
 }
 function getFeedingResultLabel(percent) {
   if (percent >= 75) return { text: "SUCCESS", class: "feed-success" };
