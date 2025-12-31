@@ -249,6 +249,22 @@ function endFeedingFromTimer() {
 
   resolveFeeding({ percent, players: 1, skipped: false });
 }
+function getFeedingResultLabel(percent) {
+  if (percent >= 75) return { text: "SUCCESS", class: "feed-success" };
+  if (percent >= 30) return { text: "OKAY",    class: "feed-neutral" };
+  return               { text: "FAILED",  class: "feed-fail" };
+}
+function showFeedingResult(percent) {
+  const { text, class: cls } = getFeedingResultLabel(percent);
+
+  const el = document.createElement("div");
+  el.className = `feeding-result ${cls}`;
+  el.textContent = text;
+
+  feedingField.appendChild(el);
+
+  setTimeout(() => el.remove(), 900);
+}
 
 function showPressPrompt() {
   const game = feedingField;
@@ -1014,6 +1030,8 @@ function resolveFeeding({ percent, players, skipped }) {
 
    setFeedButtonDisabled(false);
 exitFeedingMode();
+   showFeedingResult(percent);
+
 
 
    
