@@ -1018,6 +1018,8 @@ function exitFeedingMode() {
   isFeeding = false;
 
   petEmojiEl.style.display = "";
+
+  // 👇 DO NOT wipe the feeding field yet
   feedingField.classList.add("hidden");
 
   actionRow?.querySelectorAll("button").forEach(btn => {
@@ -1026,8 +1028,8 @@ function exitFeedingMode() {
   });
 
   stopBowlMovement();
-  hideBowl();
 }
+
 
 
 
