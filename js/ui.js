@@ -46,6 +46,9 @@ const actionRow = document.getElementById("action-row");
 -------------------------------------- */
 let isFeeding = false;
 let feedingTimer = null;
+let feedingPhase = "idle";
+
+
 
 let starterEmojis  = [];
 let selectedIndex  = 0;
@@ -867,14 +870,33 @@ function setupFeedingSession() {
 
 
 function dropOne() {
-   if (!isFeeding) return;
-   if (feedingArmed) {
-  feedingArmed = false;
-  hidePressPrompt();
-  showBowl();
-  startBowlMovement();
-  startFuse();
+  if (!isFeeding) return;
+  if (feedingArmed) return; // ⛔ cannot drop until game is live
+
+  if (feedingDropsRemaining <= 0) {
+    stopDropping();
+    return;
+  }
+
+  feedingDropsRemaining--;
+  showFeedingFoodCount();
+
+  spawnFoodPiece(success => {
+    if (success) feedingHits++;
+    feedingFinished++;
+
+    bowlPop(success);
+
+    if (feedingFinished >= feedingTotalDrops) {
+      const percent = feedingTotalDrops > 0
+        ? Math.round((feedingHits / feedingTotalDrops) * 100)
+        : 0;
+
+      resolveFeeding({ percent, players: 1, skipped: false });
+    }
+  });
 }
+
 
 
    showFeedingFoodCount();
@@ -903,12 +925,16 @@ showFeedingFoodCount();
 function startDropping() {
   if (!isFeeding) return;
 
-  // first press starts the game
+  // FIRST PRESS: start the round
   if (feedingArmed) {
     feedingArmed = false;
     hidePressPrompt();
 
-    // START TIMER HERE ⬇️
+    showBowl();
+    startBowlMovement();
+    startFuse();
+
+    // start hard timeout
     clearTimeout(feedingTimer);
     feedingTimer = setTimeout(() => {
       if (!isFeeding) return;
@@ -919,13 +945,17 @@ function startDropping() {
 
       resolveFeeding({ percent, players: 1, skipped: false });
     }, FEEDING_SESSION_MS);
+
+    return; // ⛔ do NOT drop yet
   }
 
+  // AFTER START: holding drops food
   if (dropInterval) return;
 
-  dropOne(); // immediate
+  dropOne(); // immediate first drop
   dropInterval = setInterval(dropOne, DROP_INTERVAL_MS);
 }
+
 
 
 function stopDropping() {
