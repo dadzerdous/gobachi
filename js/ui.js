@@ -1015,11 +1015,16 @@ function bindFeedingInputOnce() {
     try { feedingField.setPointerCapture(e.pointerId); } catch {}
 
     // If we're still in join/press window, host click can force-start.
-    if (isFeeding && feedingSession && feedingSession.snapshot().phase === "joining") {
-      feedingSession.forceStart({ by: "host" });
-      // dropping will begin automatically if pointer is held when active starts
-      return;
-    }
+if (
+  isFeeding &&
+  feedingSession &&
+  feedingSession.snapshot().phase === "joining"
+) {
+  // host click triggers start for EVERYONE
+  feedingSession.forceStart({ by: "host" });
+  return;
+}
+
 
     startDropping();
   });
@@ -1077,20 +1082,6 @@ function setupFeedingSession() {
       if (phase === "active") {
         hidePressPrompt();
         disableAllFeedJoinButtons();
-
-        // If host started early, broadcast the "started" system message.
-        if (meta.startedEarly) {
-          sendChat({
-            emoji: "⚙️",
-            text: `${meta.snapshot.host.emoji} started their feeding session`
-          });
-        }
-
-        // tell others: joining is now closed
-        sendChat({
-          emoji: "⚙️",
-          text: `__feed_begin__:${feedingSession.key}`
-        });
 
         showBowl();
         startBowlMovement();
