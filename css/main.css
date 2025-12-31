@@ -509,9 +509,8 @@ body.chat-open #view {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  pointer-events: auto; /* ✅ allow drops + visuals */
+  pointer-events: none;
 }
-
 
 .bowl-area {
   position: absolute;
@@ -569,74 +568,43 @@ body.chat-open #view {
   pointer-events: none;
 }
 
+#feeding-field {
+  position: relative;
+}
+
 #feeding-food-count {
   position: absolute;
   top: 4px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 8px;
+  left: auto;
+  transform: none;
   font-size: 14px;
   opacity: 0.85;
   pointer-events: none;
 }
-#feeding-field {
+
+#feeding-joiners {
   position: absolute;
-  inset: 0;
-  z-index: 3;
-}
-.feeding-result {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  animation: popFade 0.9s ease-out forwards;
+  top: 4px;
+  left: 8px;
+  font-size: 16px;
+  opacity: 0.95;
   pointer-events: none;
 }
 
-.feed-success { color: #7CFF7C; }
-.feed-neutral { color: #FFD966; }
-.feed-fail    { color: #FF6B6B; }
-
-@keyframes popFade {
-  0%   { transform: scale(0.9); opacity: 0; }
-  20%  { transform: scale(1.05); opacity: 1; }
-  100% { transform: scale(1); opacity: 0; }
-}
-.feeding-stats {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  opacity: 0;
-  transform: scale(0.96);
-  transition: opacity 200ms ease, transform 200ms ease;
-  pointer-events: none;
+.join-link {
+  margin: 0 6px;
+  padding: 2px 8px;
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 999px;
+  background: rgba(0,0,0,0.25);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.feeding-stats.show {
-  opacity: 1;
-  transform: scale(1);
+.join-link.disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
-.feeding-rating {
-  font-size: 34px;
-  font-weight: 800;
-  letter-spacing: 2px;
-}
-
-.feeding-rating.success { color: #7CFF7C; }
-.feeding-rating.neutral { color: #FFD966; }
-.feeding-rating.fail    { color: #FF6B6B; }
-
-.feeding-lines {
-  font-size: 14px;
-  opacity: 0.9;
-  text-align: center;
-  line-height: 1.4;
-}
