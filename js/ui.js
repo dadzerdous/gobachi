@@ -160,6 +160,59 @@ function toggleChat(open) {
 /* --------------------------------------
    METERS
 -------------------------------------- */
+function buildFeedingStats({ percent, players }) {
+  const rating =
+    percent >= 75 ? "success" :
+    percent >= 30 ? "neutral" :
+    "fail";
+
+  return {
+    rating,          // "success" | "neutral" | "fail"
+    percent,         // raw performance
+    players,         // coop count
+    drops: feedingTotalDrops,
+    hits: feedingHits,
+    misses: feedingTotalDrops - feedingHits
+  };
+}
+function showFeedingStatsPanel(stats) {
+  const panel = document.createElement("div");
+  panel.className = "feeding-stats";
+
+  panel.innerHTML = `
+    <div class="feeding-rating ${stats.rating}">
+      ${stats.rating.toUpperCase()}
+    </div>
+
+    <div class="feeding-lines">
+      <div>🎯 Accuracy: ${stats.percent}%</div>
+      <div>🍖 Caught: ${stats.hits} / ${stats.drops}</div>
+      <div>👥 Caretakers: ${stats.players}</div>
+    </div>
+  `;
+
+  feedingField.appendChild(panel);
+
+  setTimeout(() => panel.classList.add("show"), 10);
+  setTimeout(() => panel.remove(), 2200);
+}
+
+function buildFeedingStats({ percent, players }) {
+  const rating =
+    percent >= 75 ? "success" :
+    percent >= 30 ? "neutral" :
+    "fail";
+
+  return {
+    rating,          // "success" | "neutral" | "fail"
+    percent,         // raw performance
+    players,         // coop count
+    drops: feedingTotalDrops,
+    hits: feedingHits,
+    misses: feedingTotalDrops - feedingHits
+  };
+}
+
 
 function setMeter(name, level) {
   const el = document.querySelector(`.meter[data-meter="${name}"]`);
@@ -1027,13 +1080,13 @@ function resolveFeeding({ percent, players, skipped }) {
 exitFeedingMode();
    showFeedingResult(percent);
 
-
-
-   
-
-
   const coopBonus = Math.min(players * COOP_BONUS_PER_PLAYER, COOP_BONUS_CAP);
   const finalPercent = percent + coopBonus;
+   const stats = buildFeedingStats({ percent, players });
+
+showFeedingResult(percent);      // big word
+showFeedingStatsPanel(stats);    // detailed breakdown
+
 
   // hunger gain (simple scale for now)
   const hungerGain = Math.round(finalPercent / 25); // 0–4
