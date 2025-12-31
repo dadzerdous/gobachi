@@ -6,7 +6,7 @@
 "use strict";
 
 import { getStarterPets, createPet } from "./pet.js";
-import { connect, sendChat, onChat, onPresence } from "./net.js";
+import { connect, sendChat, onChat, onPresence, onStatus } from "./net.js";
 import { createFeedingSession } from "./feedingcore.js";
 
 /* --------------------------------------
@@ -22,6 +22,13 @@ const chatMessages = document.getElementById("chat-messages");
 const chatText     = document.getElementById("chat-text");
 const chatSend     = document.getElementById("chat-send");
 
+
+// Chat UI state: closed | min | max
+let chatState = "closed";
+let chatHeaderBuilt = false;
+
+// de-dupe to avoid showing your own message twice if the server echoes it
+let lastLocalChat = { emoji: "", text: "", t: 0 };
 const screens = {
   select: document.getElementById("pet-select"),
   pet:    document.getElementById("pet-view"),
@@ -117,6 +124,85 @@ function systemChat(text, emoji = "⚙️") {
   });
 }
 
+
+
+function setChatState(state) {
+  chatState = state;
+  if (!chatOverlay) return;
+
+  chatOverlay.classList.remove("open", "min");
+  document.body.classList.remove("chat-open", "chat-min");
+
+  if (state === "closed") {
+    chatOverlay.classList.add("hidden");
+    return;
+  }
+
+  chatOverlay.classList.remove("hidden");
+
+  if (state === "max") {
+    chatOverlay.classList.add("open");
+    document.body.classList.add("chat-open");
+  } else {
+    chatOverlay.classList.add("min");
+    document.body.classList.add("chat-min");
+  }
+}
+
+function cycleChatState() {
+  if (chatState === "closed") return setChatState("min");
+  if (chatState === "min") return setChatState("max");
+  return setChatState("closed");
+}
+
+function ensureChatHeader() {
+  if (chatHeaderBuilt) return;
+  if (!chatOverlay) return;
+
+  const panel = chatOverlay.querySelector(".chat-panel");
+  if (!panel) return;
+
+  const header = document.createElement("div");
+  header.className = "chat-header";
+
+  const left = document.createElement("div");
+  left.className = "chat-header-left";
+  left.textContent = "Chat";
+
+  const right = document.createElement("div");
+  right.className = "chat-header-right";
+
+  const btnMin = document.createElement("button");
+  btnMin.type = "button";
+  btnMin.className = "chat-hbtn";
+  btnMin.title = "Minimize";
+  btnMin.textContent = "—";
+  btnMin.onclick = () => setChatState("min");
+
+  const btnMax = document.createElement("button");
+  btnMax.type = "button";
+  btnMax.className = "chat-hbtn";
+  btnMax.title = "Maximize";
+  btnMax.textContent = "▢";
+  btnMax.onclick = () => setChatState("max");
+
+  const btnClose = document.createElement("button");
+  btnClose.type = "button";
+  btnClose.className = "chat-hbtn";
+  btnClose.title = "Close";
+  btnClose.textContent = "✕";
+  btnClose.onclick = () => setChatState("closed");
+
+  right.appendChild(btnMin);
+  right.appendChild(btnMax);
+  right.appendChild(btnClose);
+
+  header.appendChild(left);
+  header.appendChild(right);
+
+  panel.insertBefore(header, panel.firstChild);
+  chatHeaderBuilt = true;
+}
 
 function isSystemEmoji(emoji) {
   // style these as "system-like" messages
@@ -907,6 +993,8 @@ function bindInput() {
 
 export function startUI() {
    console.log("chatToggle:", chatToggle);
+  ensureChatHeader();
+  setChatState("closed");
 
   starterEmojis = getStarterPets();
   selectedIndex = 0;
@@ -916,7 +1004,18 @@ export function startUI() {
 
   onChat((msg) => {
     const skip = handleFeedSignals(msg);
-    if (!skip) renderChatEntry(msg);
+    if (!skip) {
+      const now = Date.now();
+      if (msg && msg.emoji === lastLocalChat.emoji && msg.text === lastLocalChat.text && (now - lastLocalChat.t) < 1200) {
+        // ignore local echo duplicate
+      } else {
+        renderChatEntry(msg);
+      }
+    }
+  });
+
+  onStatus((st) => {
+    console.log("[net status]", st);
   });
 
   onPresence(count => {
@@ -938,8 +1037,7 @@ export function startUI() {
   }
 if (chatToggle) {
     chatToggle.onclick = () => {
-      console.log("Chat button actually clicked!"); // <--- ADD THIS
-      toggleChat(!chatOpen);
+      cycleChatState();
     };
   }
 
@@ -948,12 +1046,13 @@ if (chatToggle) {
       if (!chatText || !chatText.value.trim()) return;
 
       // Player chat: send to server (broadcast)
-      sendChat({
-        emoji: currentPet ? currentPet.emoji : "👻",
-        text: chatText.value.trim()
-      });
-
-      chatText.value = "";
+      const emoji = currentPet ? currentPet.emoji : "👻";
+      const text = chatText.value.trim();
+      lastLocalChat = { emoji, text, t: Date.now() };
+      renderChatEntry({ emoji, text });
+      if (chatState === "closed") setChatState("min");
+      sendChat({ emoji, text });
+chatText.value = "";
     };
   }
 
@@ -1015,16 +1114,11 @@ function bindFeedingInputOnce() {
     try { feedingField.setPointerCapture(e.pointerId); } catch {}
 
     // If we're still in join/press window, host click can force-start.
-if (
-  isFeeding &&
-  feedingSession &&
-  feedingSession.snapshot().phase === "joining"
-) {
-  // host click triggers start for EVERYONE
-  feedingSession.forceStart({ by: "host" });
-  return;
-}
-
+    if (isFeeding && feedingSession && feedingSession.snapshot().phase === "joining") {
+      feedingSession.forceStart({ by: "host" });
+      // dropping will begin automatically if pointer is held when active starts
+      return;
+    }
 
     startDropping();
   });
@@ -1082,6 +1176,20 @@ function setupFeedingSession() {
       if (phase === "active") {
         hidePressPrompt();
         disableAllFeedJoinButtons();
+
+        // If host started early, broadcast the "started" system message.
+        if (meta.startedEarly) {
+          sendChat({
+            emoji: "⚙️",
+            text: `${meta.snapshot.host.emoji} started their feeding session`
+          });
+        }
+
+        // tell others: joining is now closed
+        sendChat({
+          emoji: "⚙️",
+          text: `__feed_begin__:${feedingSession.key}`
+        });
 
         showBowl();
         startBowlMovement();
