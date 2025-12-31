@@ -5,6 +5,7 @@
 
 const SERVER_URL = "wss://gobachi-server.onrender.com";
 
+
 let socket = null;
 let reconnectTimer = null;
 
@@ -18,6 +19,9 @@ function emit(kind, payload) {
   (listeners[kind] || []).forEach(fn => {
     try { fn(payload); } catch (e) { console.error("listener error:", e); }
   });
+}
+export function onStatus(fn) {
+  statusHandlers.push(fn);
 }
 
 export function connect() {
