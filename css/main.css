@@ -605,3 +605,38 @@ body.chat-open #view {
   20%  { transform: scale(1.05); opacity: 1; }
   100% { transform: scale(1); opacity: 0; }
 }
+.feeding-stats {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 200ms ease, transform 200ms ease;
+  pointer-events: none;
+}
+
+.feeding-stats.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.feeding-rating {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.feeding-rating.success { color: #7CFF7C; }
+.feeding-rating.neutral { color: #FFD966; }
+.feeding-rating.fail    { color: #FF6B6B; }
+
+.feeding-lines {
+  font-size: 14px;
+  opacity: 0.9;
+  text-align: center;
+  line-height: 1.4;
+}
