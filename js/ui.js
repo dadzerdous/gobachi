@@ -314,6 +314,8 @@ function hideBowl() {
 
 
 function spawnFoodPiece(onResult) {
+   console.log("🍖 drop", feedingDropsRemaining);
+
   const game = document.getElementById("pet-game");
   if (!game) return;
 
@@ -781,6 +783,7 @@ let feedingTotalDrops = 0;
 let feedingDropsRemaining = 0;
 let feedingHits = 0;
 let feedingFinished = 0;
+let lastDropClientX = null;
 
 let dropInterval = null;
 let feedingArmed = false;       // "PRESS" is showing, waiting for first press/hold
@@ -798,7 +801,15 @@ function bindFeedingInputOnce() {
   const playfield = document.getElementById("pet-playfield");
   if (!playfield) return;
 
-  playfield.addEventListener("pointerdown", startDropping);
+  playfield.addEventListener("pointerdown", e => {
+    lastDropClientX = e.clientX;
+    startDropping();
+  });
+
+  playfield.addEventListener("pointermove", e => {
+    if (isFeeding) lastDropClientX = e.clientX;
+  });
+
   playfield.addEventListener("pointerup", stopDropping);
   playfield.addEventListener("pointerleave", stopDropping);
   playfield.addEventListener("pointercancel", stopDropping);
