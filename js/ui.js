@@ -47,6 +47,7 @@ const actionRow = document.getElementById("action-row");
 let isFeeding = false;
 let feedingTimer = null;
 let feedingPhase = "idle";
+let pointerHeld = false;
 
 
 
@@ -878,21 +879,27 @@ function bindFeedingInputOnce() {
   if (feedingInputBound) return;
   feedingInputBound = true;
 
-  const playfield = document.getElementById("pet-playfield");
-  if (!playfield) return;
+playfield.addEventListener("pointerdown", e => {
+  pointerHeld = true;
+  lastDropClientX = e.clientX;
+  startDropping();
+});
 
-  playfield.addEventListener("pointerdown", e => {
-    lastDropClientX = e.clientX;
-    startDropping();
-  });
+playfield.addEventListener("pointerup", () => {
+  pointerHeld = false;
+  stopDropping();
+});
 
-  playfield.addEventListener("pointermove", e => {
-    if (isFeeding) lastDropClientX = e.clientX;
-  });
+playfield.addEventListener("pointerleave", () => {
+  pointerHeld = false;
+  stopDropping();
+});
 
-  playfield.addEventListener("pointerup", stopDropping);
-  playfield.addEventListener("pointerleave", stopDropping);
-  playfield.addEventListener("pointercancel", stopDropping);
+playfield.addEventListener("pointercancel", () => {
+  pointerHeld = false;
+  stopDropping();
+});
+
 }
 
 function setupFeedingSession() {
@@ -963,7 +970,11 @@ function startDropping() {
 
       resolveFeeding({ percent, players: 1, skipped: false });
     }, FEEDING_SESSION_MS);
-
+     
+  if (pointerHeld && !dropInterval) {
+    dropOne();
+    dropInterval = setInterval(dropOne, DROP_INTERVAL_MS);
+  }
     return; // ⛔ no drop on first press
   }
 
@@ -1077,9 +1088,10 @@ function resolveFeeding({ percent, players, skipped }) {
   clearTimeout(feedingTimer);
 
    setFeedButtonDisabled(false);
-exitFeedingMode();
    showFeedingResult(percent);
-
+   setTimeout(() => {
+  exitFeedingMode();
+}, 1000);
   const coopBonus = Math.min(players * COOP_BONUS_PER_PLAYER, COOP_BONUS_CAP);
   const finalPercent = percent + coopBonus;
    const stats = buildFeedingStats({ percent, players });
