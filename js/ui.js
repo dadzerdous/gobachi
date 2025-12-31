@@ -176,6 +176,13 @@ function buildFeedingStats({ percent, players }) {
     misses: feedingTotalDrops - feedingHits
   };
 }
+function clearFeedingGameplay() {
+  // remove bowl, fuse, food, counters — but NOT results
+  document.querySelector(".bowl-area")?.remove();
+  document.getElementById("fuse-bar")?.remove();
+  document.getElementById("feeding-food-count")?.remove();
+  document.querySelectorAll(".food-piece").forEach(el => el.remove());
+}
 
 function showFeedingStatsPanel(stats) {
   const panel = document.createElement("div");
@@ -878,6 +885,11 @@ function bindFeedingInputOnce() {
     startDropping();
   });
 
+  feedingField.addEventListener("pointermove", e => {
+    if (!pointerHeld) return;
+    lastDropClientX = e.clientX; // ✅ THIS is the missing piece
+  });
+
   feedingField.addEventListener("pointerup", () => {
     pointerHeld = false;
     stopDropping();
@@ -893,6 +905,7 @@ function bindFeedingInputOnce() {
     stopDropping();
   });
 }
+
 
 
 function setupFeedingSession() {
@@ -1081,6 +1094,10 @@ systemChat(
 
 function resolveFeeding({ percent, players, skipped }) {
   clearTimeout(feedingTimer);
+     stopDropping();
+
+  // ✅ NEW: remove active gameplay visuals immediately
+  clearFeedingGameplay();
   setFeedButtonDisabled(false);
 
   const coopBonus = Math.min(
@@ -1102,7 +1119,7 @@ function resolveFeeding({ percent, players, skipped }) {
 setTimeout(() => {
   exitFeedingMode();
   feedingField.innerHTML = ""; // ✅ clear AFTER results
-}, 1600);
+}, 3200);
 
 
   // hunger gain
