@@ -958,31 +958,28 @@ function startDropping() {
   if (!isFeeding) return;
 
   // FIRST PRESS: start round
-  if (feedingArmed) {
-    feedingArmed = false;
-    hidePressPrompt();
+if (feedingArmed) {
+  feedingArmed = false;
+  hidePressPrompt();
 
-    showBowl();
-    startBowlMovement();
-    startFuse();
+  showBowl();
+  startBowlMovement();
+  startFuse();
 
-    clearTimeout(feedingTimer);
-    feedingTimer = setTimeout(() => {
-      if (!isFeeding) return;
+  clearTimeout(feedingTimer);
+  feedingTimer = setTimeout(() => {
+    if (!isFeeding) return;
 
-      const percent = feedingTotalDrops > 0
-        ? Math.round((feedingHits / feedingTotalDrops) * 100)
-        : 0;
+    const percent = feedingTotalDrops > 0
+      ? Math.round((feedingHits / feedingTotalDrops) * 100)
+      : 0;
 
-      resolveFeeding({ percent, players: 1, skipped: false });
-    }, FEEDING_SESSION_MS);
-     
-  if (pointerHeld && !dropInterval) {
-    dropOne();
-    dropInterval = setInterval(dropOne, DROP_INTERVAL_MS);
-  }
-    return; // ⛔ no drop on first press
-  }
+    resolveFeeding({ percent, players: 1, skipped: false });
+  }, FEEDING_SESSION_MS);
+
+  // ✅ IMPORTANT: do not return — let dropping begin naturally
+}
+
 
   if (dropInterval) return;
 
@@ -1020,6 +1017,7 @@ function exitFeedingMode() {
   stopDropping();
   hidePressPrompt();
   clearTimeout(feedingTimer);
+feedingField.classList.remove("feeding-results-mode");
 
   isFeeding = false;
 
@@ -1095,7 +1093,7 @@ systemChat(
 function resolveFeeding({ percent, players, skipped }) {
   clearTimeout(feedingTimer);
      stopDropping();
-
+  feedingField.classList.add("feeding-results-mode");
   // ✅ NEW: remove active gameplay visuals immediately
   clearFeedingGameplay();
   setFeedButtonDisabled(false);
