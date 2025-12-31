@@ -248,7 +248,8 @@ function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
     }
   };
   tick();
-  const iv = setInterval(tick, 250);
+  let iv;
+iv = setInterval(tick, 1000);
 }
 
 function disableFeedJoinButton(key) {
