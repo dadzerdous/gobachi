@@ -1,4 +1,3 @@
-
 /* ======================================================
    GOBACHI — NETWORK LAYER (ALPHA)
    WebSocket chat + presence
@@ -7,66 +6,91 @@
 const SERVER_URL = "wss://gobachi-server.onrender.com";
 
 let socket = null;
+let reconnectTimer = null;
 
 const listeners = {
   chat: [],
-  presence: []
+  presence: [],
+  status: []
 };
 
+function emit(kind, payload) {
+  (listeners[kind] || []).forEach(fn => {
+    try { fn(payload); } catch (e) { console.error("listener error:", e); }
+  });
+}
+
 export function connect() {
-  socket = new WebSocket(SERVER_URL);
+  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
 
-  socket.onopen = () => {
-    console.log("🌐 connected to Gobachi server");
-  };
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
 
-  socket.onmessage = (event) => {
-    let msg;
+  emit("status", { state: "connecting" });
+
+  try {
+    socket = new WebSocket(SERVER_URL);
+  } catch (err) {
+    console.error("WebSocket ctor failed:", err);
+    emit("status", { state: "error", error: String(err) });
+    scheduleReconnect();
+    return;
+  }
+
+  socket.addEventListener("open", () => {
+    emit("status", { state: "open" });
+  });
+
+  socket.addEventListener("message", (evt) => {
+    let data;
     try {
-      msg = JSON.parse(event.data);
+      data = JSON.parse(evt.data);
     } catch {
-      return;
+      data = { type: "chat", emoji: "⚙️", text: String(evt.data), system: true };
     }
 
-    if (msg.type === "init") {
-      if (msg.chat) {
-        msg.chat.forEach(entry => {
-          listeners.chat.forEach(fn => fn(entry));
-        });
-      }
-      if (typeof msg.presence === "number") {
-        listeners.presence.forEach(fn => fn(msg.presence));
-      }
-    }
+    if (!data || !data.type) return;
 
-    if (msg.type === "chat") {
-      listeners.chat.forEach(fn => fn(msg.entry));
+    if (data.type === "chat") {
+      emit("chat", data);
+    } else if (data.type === "presence") {
+      emit("presence", data.count ?? data);
+    } else if (data.type === "system") {
+      emit("chat", { emoji: "⚙️", text: data.text ?? "", system: true });
     }
+  });
 
-    if (msg.type === "presence") {
-      listeners.presence.forEach(fn => fn(msg.presence));
-    }
-  };
+  socket.addEventListener("close", (evt) => {
+    emit("status", { state: "closed", code: evt.code, reason: evt.reason });
+    scheduleReconnect();
+  });
 
-  socket.onclose = () => {
-    console.log("❌ disconnected from server");
-  };
+  socket.addEventListener("error", (evt) => {
+    console.error("ws error", evt);
+    emit("status", { state: "error" });
+    try { socket.close(); } catch {}
+  });
+}
+
+function scheduleReconnect() {
+  if (reconnectTimer) return;
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    connect();
+  }, 1500);
 }
 
 export function sendChat({ emoji, text }) {
-  if (!socket || socket.readyState !== WebSocket.OPEN) return;
-
-  socket.send(JSON.stringify({
-    type: "chat",
-    emoji,
-    text
-  }));
+  if (!text) return;
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    emit("status", { state: "send_failed" });
+    return;
+  }
+  socket.send(JSON.stringify({ type: "chat", emoji, text }));
 }
 
-export function onChat(fn) {
-  listeners.chat.push(fn);
-}
-
-export function onPresence(fn) {
-  listeners.presence.push(fn);
-}
+export function onChat(fn) { listeners.chat.push(fn); }
+export function onPresence(fn) { listeners.presence.push(fn); }
+export function onStatus(fn) { listeners.status.push(fn); }
