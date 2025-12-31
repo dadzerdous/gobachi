@@ -199,21 +199,7 @@ function showFeedingStatsPanel(stats) {
   setTimeout(() => panel.remove(), 2200);
 }
 
-function buildFeedingStats({ percent, players }) {
-  const rating =
-    percent >= 75 ? "success" :
-    percent >= 30 ? "neutral" :
-    "fail";
 
-  return {
-    rating,          // "success" | "neutral" | "fail"
-    percent,         // raw performance
-    players,         // coop count
-    drops: feedingTotalDrops,
-    hits: feedingHits,
-    misses: feedingTotalDrops - feedingHits
-  };
-}
 
 
 function setMeter(name, level) {
