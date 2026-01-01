@@ -209,8 +209,9 @@ function isSystemEmoji(emoji) {
   return emoji === "⚙️" || emoji === "🐣" || emoji === "🍖";
 }
 
-function renderChatEntry(msg) {
+function renderChatEntry(msg = {}) {
   if (!chatMessages) return;
+  if (!msg.text) return; // ← ADD THIS GUARD
 
   const line = document.createElement("div");
   line.className = "chat-line";
@@ -220,13 +221,14 @@ function renderChatEntry(msg) {
   }
 
   line.innerHTML = `
-    <span class="chat-emoji">${msg.emoji}</span>
+    <span class="chat-emoji">${msg.emoji || "⚙️"}</span>
     <span class="chat-text">${msg.text}</span>
   `;
 
   chatMessages.appendChild(line);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
 
 // --------------------------------------
 // FEED COOP SIGNALS (chat-driven)
