@@ -1018,10 +1018,20 @@ export function startUI() {
     console.log("[net status]", st);
   });
 
-  onPresence(count => {
-    const el = document.getElementById("presence");
-    if (el) el.textContent = `👤 ${count}`;
-  });
+onPresence((payload) => {
+  const el = document.getElementById("presence");
+  if (!el) return;
+
+  const count =
+    typeof payload === "number"
+      ? payload
+      : payload?.count;
+
+  if (Number.isFinite(count)) {
+    el.textContent = `👤 ${count}`;
+  }
+});
+
 
   // Screens
   showScreen("select");
