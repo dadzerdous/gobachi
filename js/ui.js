@@ -1308,6 +1308,12 @@ function startDropping() {
   }, DROP_INTERVAL_MS);
 }
 
+function stopDropping() {
+  if (dropInterval) {
+    clearInterval(dropInterval);
+    dropInterval = null;
+  }
+}
 
 function enterFeedingMode() {
   isFeeding = true;
