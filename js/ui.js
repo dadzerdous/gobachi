@@ -211,23 +211,37 @@ function isSystemEmoji(emoji) {
 
 function renderChatEntry(msg = {}) {
   if (!chatMessages) return;
-  if (!msg.text) return; // ← ADD THIS GUARD
+
+  // Normalize incoming message
+  const emoji =
+    msg.emoji ??
+    msg.senderEmoji ??
+    "👻";
+
+  const text =
+    msg.text ??
+    msg.message ??
+    msg.msg ??
+    "";
+
+  if (!text) return;
 
   const line = document.createElement("div");
   line.className = "chat-line";
 
-  if (msg.system || isSystemEmoji(msg.emoji)) {
+  if (msg.system) {
     line.classList.add("system");
   }
 
   line.innerHTML = `
-    <span class="chat-emoji">${msg.emoji || "⚙️"}</span>
-    <span class="chat-text">${msg.text}</span>
+    <span class="chat-emoji">${emoji}</span>
+    <span class="chat-text">${text}</span>
   `;
 
   chatMessages.appendChild(line);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
 
 
 // --------------------------------------
@@ -1024,15 +1038,17 @@ onPresence((payload) => {
   const el = document.getElementById("presence");
   if (!el) return;
 
-  const count =
-    typeof payload === "number"
-      ? payload
-      : payload?.count;
+const count =
+  typeof payload === "number"
+    ? payload
+    : payload?.count ?? payload?.users ?? payload?.online;
+
 
   if (Number.isFinite(count)) {
     el.textContent = `👤 ${count}`;
   }
 });
+
 
 
   // Screens
