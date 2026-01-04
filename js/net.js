@@ -44,24 +44,50 @@ export function connect() {
     emit("status", { state: "open" });
   });
 
-  socket.addEventListener("message", (evt) => {
-    let data;
-    try {
-      data = JSON.parse(evt.data);
-    } catch {
-      data = { type: "chat", emoji: "⚙️", text: String(evt.data), system: true };
-    }
+ socket.addEventListener("message", (evt) => {
+  // Debug: see what the server is actually sending
+  console.log("[ws recv raw]", evt.data);
 
-    if (!data || !data.type) return;
+  let data;
+  try {
+    data = JSON.parse(evt.data);
+  } catch {
+    // plain string => treat as system chat
+    emit("chat", { emoji: "⚙️", text: String(evt.data), system: true });
+    return;
+  }
 
-    if (data.type === "chat") {
-      emit("chat", data);
-    } else if (data.type === "presence") {
-      emit("presence", data.count ?? data);
-    } else if (data.type === "system") {
-      emit("chat", { emoji: "⚙️", text: data.text ?? "", system: true });
-    }
-  });
+  if (!data) return;
+
+  // Normalize possible server formats
+  const type =
+    data.type ||
+    data.kind ||
+    data.event ||
+    data.t ||
+    (data.count != null ? "presence" : null) ||
+    ((data.emoji && (data.text || data.message)) ? "chat" : null);
+
+  if (!type) return;
+
+  if (type === "chat") {
+    const emoji = data.emoji ?? "👻";
+    const text  = data.text ?? data.message ?? "";
+    emit("chat", { ...data, emoji, text });
+    return;
+  }
+
+  if (type === "presence") {
+    emit("presence", data.count ?? data);
+    return;
+  }
+
+  if (type === "system") {
+    emit("chat", { emoji: "⚙️", text: data.text ?? "", system: true });
+    return;
+  }
+});
+
 
   socket.addEventListener("close", (evt) => {
     emit("status", { state: "closed", code: evt.code, reason: evt.reason });
