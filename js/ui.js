@@ -282,7 +282,7 @@ function handleFeedSignals(msg) {
     return true;
   }
 
-  return true;
+  return false;
 }
 
 function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
