@@ -71,17 +71,33 @@ export function connect() {
 
   if (!type) return;
 
-  if (type === "chat") {
-    const emoji = data.emoji ?? "👻";
-    const text  = data.text ?? data.message ?? "";
-    emit("chat", { ...data, emoji, text });
-    return;
-  }
+if (data.type === "chat") {
+  // Server sends: { type:"chat", entry:{ emoji, text, time } }
+  const entry = data.entry ?? data;
 
-  if (type === "presence") {
-    emit("presence", data.count ?? data);
-    return;
+  emit("chat", {
+    emoji: entry.emoji ?? "👻",
+    text: entry.text ?? "",
+    time: entry.time,
+    system: entry.emoji === "⚙️"
+  });
+  return;
+}
+
+if (data.type === "presence") {
+  // Server sends: { type:"presence", presence:N }
+  const count =
+    data.presence ??
+    data.count ??
+    data.online ??
+    data.users;
+
+  if (Number.isFinite(count)) {
+    emit("presence", count);
   }
+  return;
+}
+
 
   if (type === "system") {
     emit("chat", { emoji: "⚙️", text: data.text ?? "", system: true });
