@@ -1120,7 +1120,8 @@ function bindFeedingInputOnce() {
 
   feedingField.addEventListener("pointerdown", (e) => {
     pointerHeld = true;
-    lastDropClientX = e.clientX;
+    lastDropClientX = e.clientX ?? (e.touches && e.touches[0]?.clientX);
+
 
     // mobile reliability
     try { feedingField.setPointerCapture(e.pointerId); } catch {}
