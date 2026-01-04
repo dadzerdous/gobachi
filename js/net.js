@@ -42,6 +42,7 @@ export function connect() {
 
   socket.addEventListener("open", () => {
     emit("status", { state: "open" });
+     console.log("[ws] connected");
   });
 
  socket.addEventListener("message", (evt) => {
