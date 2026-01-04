@@ -1135,10 +1135,13 @@ function bindFeedingInputOnce() {
     startDropping();
   });
 
-  feedingField.addEventListener("pointermove", (e) => {
-    if (!pointerHeld) return;
-    lastDropClientX = e.clientX;
-  });
+feedingField.addEventListener("pointermove", (e) => {
+  if (!pointerHeld) return;
+  lastDropClientX = e.clientX;
+
+  // 👇 safety: ensure dropping continues while sliding
+  if (!dropInterval) startDropping();
+});
 
   feedingField.addEventListener("pointerup", (e) => {
     pointerHeld = false;
@@ -1296,14 +1299,15 @@ function startDropping() {
   if (dropInterval) return;
 
   dropOne();
-  dropInterval = setInterval(dropOne, DROP_INTERVAL_MS);
+  dropInterval = setInterval(() => {
+    if (!pointerHeld) {
+      stopDropping();
+      return;
+    }
+    dropOne();
+  }, DROP_INTERVAL_MS);
 }
 
-
-function stopDropping() {
-  clearInterval(dropInterval);
-  dropInterval = null;
-}
 
 function enterFeedingMode() {
   isFeeding = true;
