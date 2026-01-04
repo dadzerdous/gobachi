@@ -535,6 +535,7 @@ body.chat-open #view {
 
 
 #pet-game {
+   touch-action: none;
   position: absolute;
   inset: 0;
   display: flex;
