@@ -254,6 +254,15 @@ function renderChatEntry(msg = {}) {
 //  __feed_join__:KEY
 //  __feed_begin__:KEY
 function feedingOnPhase(phase, meta) {
+   console.log(
+  "[feedingOnPhase]",
+  phase,
+  "key:",
+  meta?.snapshot?.key,
+  "isFeeding:",
+  isFeeding
+);
+
   if (phase === "joining") {
     renderJoiners(meta.snapshot.caretakers);
     showPressPrompt(secondsFromEndsAt(meta.snapshot.joinEndsAt));
@@ -283,6 +292,20 @@ function feedingOnPhase(phase, meta) {
 }
 
 function handleFeedSignals(msg) {
+
+   console.log(
+  "[feed signal]",
+  msg.text,
+  "hasSession:",
+  !!feedingSession,
+  "phase:",
+  feedingSession?.snapshot()?.phase,
+  "isFeeding:",
+  isFeeding
+);
+
+
+   
   const text = String(msg?.text || "");
   if (!text.startsWith("__feed_")) return false;
 
@@ -354,6 +377,14 @@ function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
   btn.className = "join-link";
   btn.textContent = "Join";
 btn.onclick = () => {
+   console.log(
+  "[JOIN CLICK]",
+  "created session",
+  feedingSession?.key,
+  "phase:",
+  feedingSession?.snapshot()?.phase
+);
+
   if (btn.disabled) return;
 
   // Prevent host from joining own session
