@@ -278,9 +278,11 @@ if (text.startsWith("__feed_start__")) {
       onJoinTick: handleJoinTick,
       onResultsTick: handleResultsTick
     });
-
+    enterFeedingMode();
+bindFeedingInputOnce();
     feedingSession.startJoining();
-    showScreen("feeding");
+
+
 
     console.log("[feed] entered feeding screen for session", key);
   }
@@ -1042,7 +1044,7 @@ function bindInput() {
 export function startUI() {
    console.log("chatToggle:", chatToggle);
   ensureChatHeader();
-  setChatState("closed");
+  setChatState("min");
 
   starterEmojis = getStarterPets();
   selectedIndex = 0;
