@@ -401,7 +401,6 @@ btn.onclick = () => {
 const remainingJoinMs = Math.max(1000, endsAt - Date.now());
 
 feedingSession = createFeedingSession({
-  key,
   joinMs: remainingJoinMs,
   resultMs: FEED_RESULTS_MS,
   totalDrops: FEEDING_TOTAL_DROPS,
@@ -412,6 +411,7 @@ feedingSession = createFeedingSession({
   onResultsTick
 });
 
+feedingSession.key = key; 
 
   enterFeedingMode();
   bindFeedingInputOnce();
