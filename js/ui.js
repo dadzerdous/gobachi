@@ -22,6 +22,7 @@ const chatMessages = document.getElementById("chat-messages");
 const chatText     = document.getElementById("chat-text");
 const chatSend     = document.getElementById("chat-send");
 
+let isFeedHost = false;
 
 // Chat UI state: closed | min | max
 let chatState = "closed";
@@ -270,6 +271,10 @@ function feedingOnPhase(phase, meta) {
   }
 
   if (phase === "active") {
+      feedingTotalDrops = FEEDING_TOTAL_DROPS;
+ feedingDropsRemaining = feedingTotalDrops;
+ feedingHits = 0;
+ feedingFinished = 0;
     hidePressPrompt();
     disableAllFeedJoinButtons();
     showBowl();
@@ -326,10 +331,44 @@ if (text.startsWith("__feed_start__")) {
 
 
 
-  if (text.startsWith("__feed_join__")) {
-    const parts = text.split(":");
-    const key = parts[1] || "";
-    if (!key) return true;
+if (text.startsWith("__feed_join__")) {
+  const parts = text.split(":");
+  const key = parts[1] || "";
+  if (!key) return true;
+
+  // ---------------------------------------
+  // HOST: register joiner
+  // ---------------------------------------
+  if (
+    isFeedHost &&
+    feedingSession &&
+    feedingSession.key === key
+  ) {
+    feedingSession.join({
+      id: msg.id || msg.emoji,
+      emoji: msg.emoji || "👻"
+    });
+    renderJoiners(feedingSession.snapshot().caretakers);
+  }
+
+  // ---------------------------------------
+  // JOINER: mirror other caretakers visually
+  // ---------------------------------------
+  if (
+    !isFeedHost &&
+    feedingSession &&
+    feedingSession.key === key
+  ) {
+    feedingSession.join({
+      id: msg.id || msg.emoji,
+      emoji: msg.emoji || "👻"
+    });
+    renderJoiners(feedingSession.snapshot().caretakers);
+  }
+
+  return true;
+}
+
 
     // Host-side: register caretaker during join window.
     if (isFeeding && feedingSession && feedingSession.key === key) {
