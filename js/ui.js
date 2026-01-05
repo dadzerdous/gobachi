@@ -54,6 +54,7 @@ const actionRow = document.getElementById("action-row");
 -------------------------------------- */
 let isFeeding = false;
 let feedingTimer = null;
+let joinedFeedSessionId = null;
 
 let starterEmojis  = [];
 let selectedIndex  = 0;
@@ -257,16 +258,36 @@ function handleFeedSignals(msg) {
   if (!text.startsWith("__feed_")) return false;
 
   // Always treat these as system-level (don’t render raw tokens)
-  if (text.startsWith("__feed_start__")) {
-    const parts = text.split(":");
-    const key = parts[1] || "";
-    const endsAt = Number(parts[2] || 0);
-    const hostEmoji = parts[3] || "👻";
-    if (!key || !Number.isFinite(endsAt)) return true;
+if (text.startsWith("__feed_start__")) {
+  const parts = text.split(":");
+  const key = parts[1] || "";
+  const endsAt = Number(parts[2] || 0);
+  const hostEmoji = parts[3] || "👻";
+  if (!key || !Number.isFinite(endsAt)) return true;
 
-    showFeedJoinInvite({ key, endsAt, hostEmoji });
-    return true;
+  // Everyone sees the join invite
+  showFeedJoinInvite({ key, endsAt, hostEmoji });
+
+  // JOINER PATH: enter feeding screen + watch countdown
+  if (!isFeeding && !feedingSession) {
+    joinedFeedKey = key;
+
+    feedingSession = createFeedingSession({
+      key,
+      onPhase: handleFeedPhase,
+      onJoinTick: handleJoinTick,
+      onResultsTick: handleResultsTick
+    });
+
+    feedingSession.startJoining();
+    showScreen("feeding");
+
+    console.log("[feed] joiner entered feeding screen, watching countdown", key);
   }
+
+  return true;
+}
+
 
   if (text.startsWith("__feed_join__")) {
     const parts = text.split(":");
