@@ -388,6 +388,7 @@ const feedingJoinHandlers = {
     updateResultsCountdown(t.seconds);
   }
 };
+
 function spawnGhostDrop({ x, y, emoji }) {
   const el = document.createElement("div");
   el.className = "ghost-drop";
@@ -401,8 +402,13 @@ function spawnGhostDrop({ x, y, emoji }) {
   el.style.zIndex = "5";
 
   feedingField.appendChild(el);
-  animateDrop(el, { ghost: true });
+
+  // TEMP: no animation yet
+  setTimeout(() => {
+    el.remove();
+  }, 1000);
 }
+
 
 
 
@@ -717,15 +723,17 @@ if (
   feedingSession &&
   feedingSession.snapshot().phase === "active"
 ) {
-const rect = piece.getBoundingClientRect();
+const pieceRect = piece.getBoundingClientRect();
 const fieldRect = feedingField.getBoundingClientRect();
+
+const x = pieceRect.left - fieldRect.left;
+const y = pieceRect.top - fieldRect.top;
 
 sendChat({
   emoji: currentPet?.emoji || "👻",
-  text: `__feed_drop__:${feedingSession.key}:${
-    rect.left - fieldRect.left
-  }:${rect.top - fieldRect.top}:${currentPet?.emoji || "👻"}`
+  text: `__feed_drop__:${feedingSession.key}:${x}:${y}:${currentPet?.emoji || "👻"}`
 });
+
 
 }
 
