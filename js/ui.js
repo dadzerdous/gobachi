@@ -417,6 +417,11 @@ btn.onclick = () => {
   // 2️⃣ Sync the host's session key (Crucial for signal matching)
   feedingSession.key = key;
 
+   feedingTotalDrops = FEEDING_TOTAL_DROPS;
+feedingDropsRemaining = feedingTotalDrops;
+feedingHits = 0;
+feedingFinished = 0;
+
   console.log(
     "[JOIN CLICK]",
     "created session",
@@ -1259,11 +1264,19 @@ function bindFeedingInputOnce() {
     try { feedingField.setPointerCapture(e.pointerId); } catch {}
 
     // If we're still in join/press window, host click can force-start.
-    if (isFeeding && feedingSession && feedingSession.snapshot().phase === "joining") {
-      feedingSession.forceStart({ by: "host" });
-      // dropping will begin automatically if pointer is held when active starts
-      return;
-    }
+const snap = feedingSession.snapshot();
+
+// Only the HOST may force-start
+if (
+  isFeeding &&
+  feedingSession &&
+  snap.phase === "joining" &&
+  snap.host.id === "local"
+) {
+  feedingSession.forceStart({ by: "host" });
+  return;
+}
+
 
     startDropping();
   });
