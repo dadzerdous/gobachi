@@ -373,31 +373,37 @@ function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
 btn.onclick = () => {
   if (btn.disabled) return;
 
-  // Prevent host from joining their own session
-  if (feedingSession && feedingSession.key === key) {
-    console.warn("[feed] host cannot join their own session");
-    return;
-  }
+  // Prevent host from joining own session
+  if (feedingSession && feedingSession.key === key) return;
 
-  // Send join signal (this part already worked)
   sendChat({
     emoji: currentPet ? currentPet.emoji : "👻",
     text: `__feed_join__:${key}`
   });
 
-  // JOINER LOCAL TRANSITION (this is the missing piece)
-  if (activeFeedKey !== key) {
-    activeFeedKey = key;
+  // JOINER CREATES LOCAL FOLLOWER SESSION
+  activeFeedKey = key;
 
-    enterFeedingMode();          // 🔑 makes UI visible
-    bindFeedingInputOnce();      // prepares input
-    feedingSession.startJoining(); // joiner waits with countdown
-  }
+  feedingSession = createFeedingSession({
+    key,
+    joinMs: FEED_JOIN_MS,
+    resultMs: FEED_RESULTS_MS,
+    totalDrops: FEEDING_TOTAL_DROPS,
+    coopBonusPerPlayer: COOP_BONUS_PER_PLAYER,
+    coopBonusCap: COOP_BONUS_CAP,
+    onPhase: feedingOnPhase,
+    onJoinTick,
+    onResultsTick
+  });
+
+  enterFeedingMode();
+  bindFeedingInputOnce();
+  feedingSession.startJoining();
 
   btn.disabled = true;
-  btn.classList.add("disabled");
   btn.textContent = "Joined";
 };
+
 
 
   const timer = document.createElement("span");
