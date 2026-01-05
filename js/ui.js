@@ -289,28 +289,17 @@ function handleFeedSignals(msg) {
   // Always treat these as system-level (don’t render raw tokens)
 if (text.startsWith("__feed_start__")) {
   const parts = text.split(":");
-  const key = parts[1] || "";
-  const endsAt = Number(parts[2] || 0);
+  const key = parts[1];
+  const endsAt = Number(parts[2]);
   const hostEmoji = parts[3] || "👻";
   if (!key || !Number.isFinite(endsAt)) return true;
 
+  // ONLY show invite
   showFeedJoinInvite({ key, endsAt, hostEmoji });
-
-  // JOINER PATH: enter feeding screen if not already inside
-  if (activeFeedKey !== key) {
-    activeFeedKey = key;
-
-    enterFeedingMode();
-bindFeedingInputOnce();
-    feedingSession.startJoining();
-
-
-
-    console.log("[feed] entered feeding screen for session", key);
-  }
 
   return true;
 }
+
 
 
 
@@ -335,11 +324,13 @@ bindFeedingInputOnce();
 if (text.startsWith("__feed_begin__")) {
   const key = text.split(":")[1];
   if (feedingSession && feedingSession.key === key) {
-    payFoodCost();
-    feedingSession.forceStart({ by: "host" });
+    if (feedingSession.snapshot().phase === "joining") {
+      feedingSession.forceStart({ by: "host" });
+    }
   }
   return true;
 }
+
 
 
 
@@ -376,17 +367,20 @@ btn.onclick = () => {
   // JOINER CREATES LOCAL FOLLOWER SESSION
   activeFeedKey = key;
 
-  feedingSession = createFeedingSession({
-    key,
-    joinMs: FEED_JOIN_MS,
-    resultMs: FEED_RESULTS_MS,
-    totalDrops: FEEDING_TOTAL_DROPS,
-    coopBonusPerPlayer: COOP_BONUS_PER_PLAYER,
-    coopBonusCap: COOP_BONUS_CAP,
-    onPhase: feedingOnPhase,
-    onJoinTick,
-    onResultsTick
-  });
+const remainingJoinMs = Math.max(1000, endsAt - Date.now());
+
+feedingSession = createFeedingSession({
+  key,
+  joinMs: remainingJoinMs,
+  resultMs: FEED_RESULTS_MS,
+  totalDrops: FEEDING_TOTAL_DROPS,
+  coopBonusPerPlayer: COOP_BONUS_PER_PLAYER,
+  coopBonusCap: COOP_BONUS_CAP,
+  onPhase: feedingOnPhase,
+  onJoinTick,
+  onResultsTick
+});
+
 
   enterFeedingMode();
   bindFeedingInputOnce();
