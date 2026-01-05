@@ -307,15 +307,24 @@ if (text.startsWith("__feed_start__")) {
     return true;
   }
 
-  if (text.startsWith("__feed_begin__")) {
-    const parts = text.split(":");
-    const key = parts[1] || "";
-    if (!key) return true;
+if (text.startsWith("__feed_begin__")) {
+  const parts = text.split(":");
+  const key = parts[1] || "";
+  if (!key) return true;
 
-    // Joining closed everywhere.
-    disableFeedJoinButton(key);
-    return true;
+  disableFeedJoinButton(key);
+
+  // JOINER PATH: feeding begins now
+  if (feedingSession && joinedFeedKey === key) {
+    payFoodCost(); // same cost as host
+    feedingSession.forceStart({ by: "host" });
+
+    console.log("[feed] joiner feeding started", key);
   }
+
+  return true;
+}
+
 
   return false;
 }
