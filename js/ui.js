@@ -360,6 +360,16 @@ if (text.startsWith("__feed_begin__")) {
 
   return false;
 }
+const feedingJoinHandlers = {
+  onPhase: feedingOnPhase,
+  onJoinTick(t) {
+    showPressPrompt(t.seconds);
+    renderJoiners(t.snapshot.caretakers);
+  },
+  onResultsTick(t) {
+    updateResultsCountdown(t.seconds);
+  }
+};
 
 function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
   if (!chatMessages) return;
@@ -377,45 +387,54 @@ function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
   btn.className = "join-link";
   btn.textContent = "Join";
 btn.onclick = () => {
-   console.log(
-  "[JOIN CLICK]",
-  "created session",
-  feedingSession?.key,
-  "phase:",
-  feedingSession?.snapshot()?.phase
-);
-
   if (btn.disabled) return;
 
-  // Prevent host from joining own session
+  // Prevent re-joining or hosting while a session is active
   if (feedingSession && feedingSession.key === key) return;
 
+   if (feedingSession && feedingSession.key === key && isFeeding) {
+  btn.style.display = "none";
+}
+
+
+  const remainingJoinMs = Math.max(1000, endsAt - Date.now());
+
+  // 1️⃣ Create the local session with full handlers
+  feedingSession = createFeedingSession({
+    joinMs: remainingJoinMs,
+    resultMs: FEED_RESULTS_MS,
+    totalDrops: FEEDING_TOTAL_DROPS,
+    coopBonusPerPlayer: COOP_BONUS_PER_PLAYER,
+    coopBonusCap: COOP_BONUS_CAP,
+    ...feedingJoinHandlers
+  });
+
+  if (!feedingSession) {
+    console.error("❌ Failed to create joiner feeding session");
+    return;
+  }
+
+  // 2️⃣ Sync the host's session key (Crucial for signal matching)
+  feedingSession.key = key;
+
+  console.log(
+    "[JOIN CLICK]",
+    "created session",
+    feedingSession.key,
+    "phase:",
+    feedingSession.snapshot().phase
+  );
+
+  // 3️⃣ Initialize local UI and start the joining phase
+  enterFeedingMode();
+  bindFeedingInputOnce();
+  feedingSession.startJoining();
+
+  // 4️⃣ Notify the host and network
   sendChat({
     emoji: currentPet ? currentPet.emoji : "👻",
     text: `__feed_join__:${key}`
   });
-
-  // JOINER CREATES LOCAL FOLLOWER SESSION
-  activeFeedKey = key;
-
-const remainingJoinMs = Math.max(1000, endsAt - Date.now());
-
-feedingSession = createFeedingSession({
-  joinMs: remainingJoinMs,
-  resultMs: FEED_RESULTS_MS,
-  totalDrops: FEEDING_TOTAL_DROPS,
-  coopBonusPerPlayer: COOP_BONUS_PER_PLAYER,
-  coopBonusCap: COOP_BONUS_CAP,
-  onPhase: feedingOnPhase,
-  onJoinTick,
-  onResultsTick
-});
-
-feedingSession.key = key; 
-
-  enterFeedingMode();
-  bindFeedingInputOnce();
-  feedingSession.startJoining();
 
   btn.disabled = true;
   btn.textContent = "Joined";
