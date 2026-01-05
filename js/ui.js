@@ -347,7 +347,8 @@ function handleFeedSignals(msg) {
   const [, key, x, y, emoji] = text.split(":");
 
   if (!feedingSession || feedingSession.key !== key) return true;
-  if (emoji === currentPet?.emoji) return true; // don't echo self
+  if (msg.emoji === currentPet?.emoji) return true;
+
 
   spawnGhostDrop({
     x: Number(x),
@@ -397,11 +398,12 @@ function spawnGhostDrop({ x, y, emoji }) {
   el.style.top = `${y}px`;
   el.style.opacity = "0.75";
   el.style.pointerEvents = "none";
-  el.style.zIndex = "3";
+  el.style.zIndex = "5";
 
   feedingField.appendChild(el);
   animateDrop(el, { ghost: true });
 }
+
 
 
 function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
@@ -1645,7 +1647,8 @@ function resolveFeeding({ skipped }) {
   const finalPercent = results.finalPercent;
   const players = results.players;
   const coopBonus = results.coopBonus;
-   const myScore = results.personalPercent;
+   const myScore = results.percent;
+
 const avgScore = results.finalPercent;
 
   // hunger gain (simple scale for now)
