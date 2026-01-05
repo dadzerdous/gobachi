@@ -45,65 +45,60 @@ export function connect() {
      console.log("[ws] connected");
   });
 
- socket.addEventListener("message", (evt) => {
-  // Debug: see what the server is actually sending
+socket.addEventListener("message", (evt) => {
   console.log("[ws recv raw]", evt.data);
 
   let data;
   try {
     data = JSON.parse(evt.data);
   } catch {
-    // plain string => treat as system chat
     emit("chat", { emoji: "⚙️", text: String(evt.data), system: true });
     return;
   }
 
   if (!data) return;
 
-  // Normalize possible server formats
   const type =
     data.type ||
     data.kind ||
     data.event ||
     data.t ||
-    (data.count != null ? "presence" : null) ||
-    ((data.emoji && (data.text || data.message)) ? "chat" : null);
+    (data.presence != null ? "presence" : null) ||
+    ((data.entry || data.emoji) ? "chat" : null);
 
   if (!type) return;
 
-if (data.type === "chat") {
-  // Server sends: { type:"chat", entry:{ emoji, text, time } }
-  const entry = data.entry ?? data;
+  if (type === "chat") {
+    const entry = data.entry ?? data;
 
-  emit("chat", {
-    emoji: entry.emoji ?? "👻",
-    text: entry.text ?? "",
-    time: entry.time,
-    system: entry.emoji === "⚙️"
-  });
-  return;
-}
-
-if (data.type === "presence") {
-  // Server sends: { type:"presence", presence:N }
-  const count =
-    data.presence ??
-    data.count ??
-    data.online ??
-    data.users;
-
-  if (Number.isFinite(count)) {
-    emit("presence", count);
+    emit("chat", {
+      emoji: entry.emoji ?? "👻",
+      text: entry.text ?? "",
+      time: entry.time,
+      system: entry.emoji === "⚙️"
+    });
+    return;
   }
-  return;
-}
 
+  if (type === "presence") {
+    const count =
+      data.presence ??
+      data.count ??
+      data.online ??
+      data.users;
+
+    if (Number.isFinite(count)) {
+      emit("presence", count);
+    }
+    return;
+  }
 
   if (type === "system") {
     emit("chat", { emoji: "⚙️", text: data.text ?? "", system: true });
     return;
   }
 });
+
 
 
   socket.addEventListener("close", (evt) => {
