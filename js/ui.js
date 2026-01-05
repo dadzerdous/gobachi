@@ -391,13 +391,18 @@ function spawnGhostDrop({ x, y, emoji }) {
   const el = document.createElement("div");
   el.className = "ghost-drop";
   el.textContent = emoji;
+
+  el.style.position = "absolute";
   el.style.left = `${x}px`;
   el.style.top = `${y}px`;
   el.style.opacity = "0.75";
-  feedingField.appendChild(el);
+  el.style.pointerEvents = "none";
+  el.style.zIndex = "3";
 
+  feedingField.appendChild(el);
   animateDrop(el, { ghost: true });
 }
+
 
 function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
   if (!chatMessages) return;
@@ -713,10 +718,16 @@ if (
   feedingSession &&
   feedingSession.snapshot().phase === "active"
 ) {
-  sendChat({
-    emoji: currentPet?.emoji || "👻",
-    text: `__feed_drop__:${feedingSession.key}:${el.offsetLeft}:${el.offsetTop}:${currentPet?.emoji || "👻"}`
-  });
+const rect = piece.getBoundingClientRect();
+const fieldRect = feedingField.getBoundingClientRect();
+
+sendChat({
+  emoji: currentPet?.emoji || "👻",
+  text: `__feed_drop__:${feedingSession.key}:${
+    rect.left - fieldRect.left
+  }:${rect.top - fieldRect.top}:${currentPet?.emoji || "👻"}`
+});
+
 }
 
 if (lastDropClientX != null) {
@@ -1584,6 +1595,7 @@ function stopBowlMovement() {
 
 function startFeeding({ skip = false, isCommunity = false } = {}) {
   if (isFeeding) return;
+     isFeedHost = true; 
 
   if (foodCount <= 0) {
     systemChat("the bowl is empty");
