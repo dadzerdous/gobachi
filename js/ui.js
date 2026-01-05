@@ -300,18 +300,6 @@ if (text.startsWith("__feed_start__")) {
   if (activeFeedKey !== key) {
     activeFeedKey = key;
 
-    feedingSession = createFeedingSession({
-  key,
-  onPhase: feedingOnPhase,
-  onJoinTick(t) {
-    showPressPrompt(t.seconds);
-    renderJoiners(t.snapshot.caretakers);
-  },
-  onResultsTick(t) {
-    updateResultsCountdown(t.seconds);
-  }
-});
-
     enterFeedingMode();
 bindFeedingInputOnce();
     feedingSession.startJoining();
@@ -400,19 +388,6 @@ btn.onclick = () => {
   // JOINER LOCAL TRANSITION (this is the missing piece)
   if (activeFeedKey !== key) {
     activeFeedKey = key;
-
-feedingSession = createFeedingSession({
-  key,
-  onPhase: feedingOnPhase,
-  onJoinTick(t) {
-    showPressPrompt(t.seconds);
-    renderJoiners(t.snapshot.caretakers);
-  },
-  onResultsTick(t) {
-    updateResultsCountdown(t.seconds);
-  }
-});
-
 
     enterFeedingMode();          // 🔑 makes UI visible
     bindFeedingInputOnce();      // prepares input
