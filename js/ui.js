@@ -343,6 +343,21 @@ function handleFeedSignals(msg) {
 
     return true;
   }
+   if (text.startsWith("__feed_drop__")) {
+  const [, key, x, y, emoji] = text.split(":");
+
+  if (!feedingSession || feedingSession.key !== key) return true;
+  if (emoji === currentPet?.emoji) return true; // don't echo self
+
+  spawnGhostDrop({
+    x: Number(x),
+    y: Number(y),
+    emoji
+  });
+
+  return true;
+}
+
 
   // ----------------------------------
   // FEED BEGIN (host started)
@@ -372,6 +387,17 @@ const feedingJoinHandlers = {
     updateResultsCountdown(t.seconds);
   }
 };
+function spawnGhostDrop({ x, y, emoji }) {
+  const el = document.createElement("div");
+  el.className = "ghost-drop";
+  el.textContent = emoji;
+  el.style.left = `${x}px`;
+  el.style.top = `${y}px`;
+  el.style.opacity = "0.75";
+  feedingField.appendChild(el);
+
+  animateDrop(el, { ghost: true });
+}
 
 function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
   if (!chatMessages) return;
@@ -419,6 +445,10 @@ btn.onclick = () => {
 
   // 2️⃣ Sync the host's session key (Crucial for signal matching)
   feedingSession.key = key;
+   feedingSession.join({
+  id: "host",
+  emoji: hostEmoji
+});
 
    feedingTotalDrops = FEEDING_TOTAL_DROPS;
 feedingDropsRemaining = feedingTotalDrops;
@@ -676,6 +706,18 @@ function spawnFoodPiece(onResult) {
   const piece = document.createElement("div");
   piece.className = "food-piece";
   piece.textContent = "🍖";
+// ---------------------------------------
+// COOP: broadcast drop (visual-only)
+// ---------------------------------------
+if (
+  feedingSession &&
+  feedingSession.snapshot().phase === "active"
+) {
+  sendChat({
+    emoji: currentPet?.emoji || "👻",
+    text: `__feed_drop__:${feedingSession.key}:${el.offsetLeft}:${el.offsetTop}:${currentPet?.emoji || "👻"}`
+  });
+}
 
 if (lastDropClientX != null) {
   piece.style.left = getDropXFromClient(lastDropClientX);
@@ -1594,6 +1636,8 @@ function resolveFeeding({ skipped }) {
   const finalPercent = results.finalPercent;
   const players = results.players;
   const coopBonus = results.coopBonus;
+   const myScore = results.personalPercent;
+const avgScore = results.finalPercent;
 
   // hunger gain (simple scale for now)
   const hungerGain = Math.round(finalPercent / 25); // 0–4
