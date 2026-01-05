@@ -55,6 +55,7 @@ const actionRow = document.getElementById("action-row");
 let isFeeding = false;
 let feedingTimer = null;
 let joinedFeedSessionId = null;
+let activeFeedKey = null;
 
 let starterEmojis  = [];
 let selectedIndex  = 0;
@@ -265,12 +266,11 @@ if (text.startsWith("__feed_start__")) {
   const hostEmoji = parts[3] || "👻";
   if (!key || !Number.isFinite(endsAt)) return true;
 
-  // Everyone sees the join invite
   showFeedJoinInvite({ key, endsAt, hostEmoji });
 
-  // JOINER PATH: enter feeding screen + watch countdown
-  if (!isFeeding && !feedingSession) {
-    joinedFeedKey = key;
+  // JOINER PATH: enter feeding screen if not already inside
+  if (activeFeedKey !== key) {
+    activeFeedKey = key;
 
     feedingSession = createFeedingSession({
       key,
@@ -282,11 +282,12 @@ if (text.startsWith("__feed_start__")) {
     feedingSession.startJoining();
     showScreen("feeding");
 
-    console.log("[feed] joiner entered feeding screen, watching countdown", key);
+    console.log("[feed] entered feeding screen for session", key);
   }
 
   return true;
 }
+
 
 
   if (text.startsWith("__feed_join__")) {
@@ -315,15 +316,16 @@ if (text.startsWith("__feed_begin__")) {
   disableFeedJoinButton(key);
 
   // JOINER PATH: feeding begins now
-  if (feedingSession && joinedFeedKey === key) {
-    payFoodCost(); // same cost as host
+  if (feedingSession && activeFeedKey === key) {
+    payFoodCost();
     feedingSession.forceStart({ by: "host" });
 
-    console.log("[feed] joiner feeding started", key);
+    console.log("[feed] feeding started for joiner", key);
   }
 
   return true;
 }
+
 
 
   return false;
