@@ -450,10 +450,7 @@ btn.onclick = () => {
 
   // 2️⃣ Sync the host's session key (Crucial for signal matching)
   feedingSession.key = key;
-   feedingSession.join({
-  id: "host",
-  emoji: hostEmoji
-});
+
 
    feedingTotalDrops = FEEDING_TOTAL_DROPS;
 feedingDropsRemaining = feedingTotalDrops;
@@ -1672,9 +1669,10 @@ const avgScore = results.finalPercent;
                  "FAIL";
 
   const lines = [
-    `${rating} — ${finalPercent}%`,
-    `caught ${results.hits}/${results.drops}`,
-    `${players} caretaker${players > 1 ? "s" : ""} (+${coopBonus}%)`
+  `you: ${myScore}%`,
+  `average: ${avgScore}%`,
+  `caught ${results.hits}/${results.drops}`,
+  `${players} caretaker${players > 1 ? "s" : ""} (+${coopBonus}%)`
   ];
 
   showResultsOverlay({ rating, lines });
