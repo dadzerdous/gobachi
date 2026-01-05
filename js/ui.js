@@ -297,108 +297,71 @@ function feedingOnPhase(phase, meta) {
 }
 
 function handleFeedSignals(msg) {
+  console.log(
+    "[feed signal]",
+    msg.text,
+    "hasSession:",
+    !!feedingSession,
+    "phase:",
+    feedingSession?.snapshot()?.phase,
+    "isFeeding:",
+    isFeeding
+  );
 
-   console.log(
-  "[feed signal]",
-  msg.text,
-  "hasSession:",
-  !!feedingSession,
-  "phase:",
-  feedingSession?.snapshot()?.phase,
-  "isFeeding:",
-  isFeeding
-);
-
-
-   
   const text = String(msg?.text || "");
   if (!text.startsWith("__feed_")) return false;
 
-  // Always treat these as system-level (don’t render raw tokens)
-if (text.startsWith("__feed_start__")) {
-  const parts = text.split(":");
-  const key = parts[1];
-  const endsAt = Number(parts[2]);
-  const hostEmoji = parts[3] || "👻";
-  if (!key || !Number.isFinite(endsAt)) return true;
+  // ----------------------------------
+  // FEED START (invite only)
+  // ----------------------------------
+  if (text.startsWith("__feed_start__")) {
+    const parts = text.split(":");
+    const key = parts[1];
+    const endsAt = Number(parts[2]);
+    const hostEmoji = parts[3] || "👻";
+    if (!key || !Number.isFinite(endsAt)) return true;
 
-  // ONLY show invite
-  showFeedJoinInvite({ key, endsAt, hostEmoji });
-
-  return true;
-}
-
-
-
-
-if (text.startsWith("__feed_join__")) {
-  const parts = text.split(":");
-  const key = parts[1] || "";
-  if (!key) return true;
-
-  // ---------------------------------------
-  // HOST: register joiner
-  // ---------------------------------------
-  if (
-    isFeedHost &&
-    feedingSession &&
-    feedingSession.key === key
-  ) {
-    feedingSession.join({
-      id: msg.id || msg.emoji,
-      emoji: msg.emoji || "👻"
-    });
-    renderJoiners(feedingSession.snapshot().caretakers);
+    showFeedJoinInvite({ key, endsAt, hostEmoji });
+    return true;
   }
 
-  // ---------------------------------------
-  // JOINER: mirror other caretakers visually
-  // ---------------------------------------
-  if (
-    !isFeedHost &&
-    feedingSession &&
-    feedingSession.key === key
-  ) {
-    feedingSession.join({
-      id: msg.id || msg.emoji,
-      emoji: msg.emoji || "👻"
-    });
-    renderJoiners(feedingSession.snapshot().caretakers);
-  }
+  // ----------------------------------
+  // FEED JOIN
+  // ----------------------------------
+  if (text.startsWith("__feed_join__")) {
+    const parts = text.split(":");
+    const key = parts[1];
+    if (!key) return true;
 
-  return true;
-}
-
-
-    // Host-side: register caretaker during join window.
-    if (isFeeding && feedingSession && feedingSession.key === key) {
-      const caretakerId = String(msg?.id || msg?.sender || msg?.socketId || msg?.emoji || "").trim();
-      const caretakerEmoji = msg?.emoji || "👻";
-      if (caretakerId) {
-        feedingSession.join({ id: caretakerId, emoji: caretakerEmoji });
-        renderJoiners(feedingSession.snapshot().caretakers);
-      }
+    if (feedingSession && feedingSession.key === key) {
+      feedingSession.join({
+        id: msg.id || msg.emoji,
+        emoji: msg.emoji || "👻"
+      });
+      renderJoiners(feedingSession.snapshot().caretakers);
     }
 
     return true;
   }
 
-if (text.startsWith("__feed_begin__")) {
-  const key = text.split(":")[1];
-  if (feedingSession && feedingSession.key === key) {
-    if (feedingSession.snapshot().phase === "joining") {
+  // ----------------------------------
+  // FEED BEGIN (host started)
+  // ----------------------------------
+  if (text.startsWith("__feed_begin__")) {
+    const key = text.split(":")[1];
+    if (
+      feedingSession &&
+      feedingSession.key === key &&
+      feedingSession.snapshot().phase === "joining"
+    ) {
       feedingSession.forceStart({ by: "host" });
     }
+    return true;
   }
-  return true;
-}
-
-
-
-
 
   return false;
 }
+
 const feedingJoinHandlers = {
   onPhase: feedingOnPhase,
   onJoinTick(t) {
