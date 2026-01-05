@@ -389,6 +389,7 @@ function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
   btn.className = "join-link";
   btn.textContent = "Join";
 btn.onclick = () => {
+   isFeedHost = false;
   if (btn.disabled) return;
 
   // Prevent re-joining or hosting while a session is active
@@ -1278,11 +1279,12 @@ if (
   isFeeding &&
   feedingSession &&
   snap.phase === "joining" &&
-  snap.host.id === "local"
+  isFeedHost === true
 ) {
   feedingSession.forceStart({ by: "host" });
   return;
 }
+
 
 
     startDropping();
@@ -1554,6 +1556,8 @@ function startFeeding({ skip = false, isCommunity = false } = {}) {
 
   // consume food immediately
   foodCount--;
+   isFeedHost = true;
+
   updateFoodUI();
 enterFeedingMode();
 bindFeedingInputOnce();
