@@ -253,6 +253,34 @@ function renderChatEntry(msg = {}) {
 //  __feed_start__:KEY:ENDS_AT_MS:HOST_EMOJI
 //  __feed_join__:KEY
 //  __feed_begin__:KEY
+function feedingOnPhase(phase, meta) {
+  if (phase === "joining") {
+    renderJoiners(meta.snapshot.caretakers);
+    showPressPrompt(secondsFromEndsAt(meta.snapshot.joinEndsAt));
+    return;
+  }
+
+  if (phase === "active") {
+    hidePressPrompt();
+    disableAllFeedJoinButtons();
+    showBowl();
+    startBowlMovement();
+    startFuse();
+
+    if (pointerHeld) startDropping();
+    return;
+  }
+
+  if (phase === "results") {
+    return;
+  }
+
+  if (phase === "idle") {
+    hideResultsOverlay();
+    if (isFeeding) exitFeedingMode();
+    feedingSession = null;
+  }
+}
 
 function handleFeedSignals(msg) {
   const text = String(msg?.text || "");
@@ -273,11 +301,17 @@ if (text.startsWith("__feed_start__")) {
     activeFeedKey = key;
 
     feedingSession = createFeedingSession({
-      key,
-      onPhase: handleFeedPhase,
-      onJoinTick: handleJoinTick,
-      onResultsTick: handleResultsTick
-    });
+  key,
+  onPhase: feedingOnPhase,
+  onJoinTick(t) {
+    showPressPrompt(t.seconds);
+    renderJoiners(t.snapshot.caretakers);
+  },
+  onResultsTick(t) {
+    updateResultsCountdown(t.seconds);
+  }
+});
+
     enterFeedingMode();
 bindFeedingInputOnce();
     feedingSession.startJoining();
@@ -367,12 +401,18 @@ btn.onclick = () => {
   if (activeFeedKey !== key) {
     activeFeedKey = key;
 
-    feedingSession = createFeedingSession({
-      key,
-      onPhase: handleFeedPhase,
-      onJoinTick: handleJoinTick,
-      onResultsTick: handleResultsTick
-    });
+feedingSession = createFeedingSession({
+  key,
+  onPhase: feedingOnPhase,
+  onJoinTick(t) {
+    showPressPrompt(t.seconds);
+    renderJoiners(t.snapshot.caretakers);
+  },
+  onResultsTick(t) {
+    updateResultsCountdown(t.seconds);
+  }
+});
+
 
     enterFeedingMode();          // 🔑 makes UI visible
     bindFeedingInputOnce();      // prepares input
