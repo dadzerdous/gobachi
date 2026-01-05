@@ -348,17 +348,42 @@ function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
   btn.type = "button";
   btn.className = "join-link";
   btn.textContent = "Join";
-  btn.onclick = () => {
-    if (btn.disabled) return;
-    // Send join signal; server will broadcast back to host.
-    sendChat({
-      emoji: currentPet ? currentPet.emoji : "👻",
-      text: `__feed_join__:${key}`
+btn.onclick = () => {
+  if (btn.disabled) return;
+
+  // Prevent host from joining their own session
+  if (feedingSession && feedingSession.key === key) {
+    console.warn("[feed] host cannot join their own session");
+    return;
+  }
+
+  // Send join signal (this part already worked)
+  sendChat({
+    emoji: currentPet ? currentPet.emoji : "👻",
+    text: `__feed_join__:${key}`
+  });
+
+  // JOINER LOCAL TRANSITION (this is the missing piece)
+  if (activeFeedKey !== key) {
+    activeFeedKey = key;
+
+    feedingSession = createFeedingSession({
+      key,
+      onPhase: handleFeedPhase,
+      onJoinTick: handleJoinTick,
+      onResultsTick: handleResultsTick
     });
-    btn.disabled = true;
-    btn.classList.add("disabled");
-    btn.textContent = "Joined";
-  };
+
+    enterFeedingMode();          // 🔑 makes UI visible
+    bindFeedingInputOnce();      // prepares input
+    feedingSession.startJoining(); // joiner waits with countdown
+  }
+
+  btn.disabled = true;
+  btn.classList.add("disabled");
+  btn.textContent = "Joined";
+};
+
 
   const timer = document.createElement("span");
   timer.className = "chat-text";
