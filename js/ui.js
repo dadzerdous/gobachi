@@ -422,6 +422,11 @@ feedingDropsRemaining = feedingTotalDrops;
 feedingHits = 0;
 feedingFinished = 0;
 
+   feedingSession.join({
+  id: "local",
+  emoji: currentPet ? currentPet.emoji : "👻"
+});
+
   console.log(
     "[JOIN CLICK]",
     "created session",
