@@ -333,22 +333,14 @@ bindFeedingInputOnce();
   }
 
 if (text.startsWith("__feed_begin__")) {
-  const parts = text.split(":");
-  const key = parts[1] || "";
-  if (!key) return true;
-
-  disableFeedJoinButton(key);
-
-  // JOINER PATH: feeding begins now
-  if (feedingSession && activeFeedKey === key) {
+  const key = text.split(":")[1];
+  if (feedingSession && feedingSession.key === key) {
     payFoodCost();
     feedingSession.forceStart({ by: "host" });
-
-    console.log("[feed] feeding started for joiner", key);
   }
-
   return true;
 }
+
 
 
 
