@@ -404,13 +404,13 @@ function spawnGhostDrop({ x, y, emoji }) {
   el.style.top = `${y}px`; // This is -40px
   el.style.pointerEvents = "none";
   el.style.zIndex = "5";
-  el.style.transition = "top 2s linear, opacity 2s ease-in"; // Add transition
+  el.style.transition = "top 2s linear, opacity 2.2s ease-in"; // Add transition
 
   feedingField.appendChild(el);
 
   // Force a reflow then trigger the "fall"
   requestAnimationFrame(() => {
-    el.style.top = "100%"; // Fall to the bottom of the container
+    el.style.top = "75%"; // Fall to the bottom of the container
     el.style.opacity = "0";
   });
 
