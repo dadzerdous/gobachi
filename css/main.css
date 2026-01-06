@@ -676,3 +676,8 @@ body.chat-open #view {
   text-align: center;
   line-height: 1.4;
 }
+.ghost-drop {
+  font-size: 24px;
+  white-space: nowrap;
+  user-select: none;
+}
