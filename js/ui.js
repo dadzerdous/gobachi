@@ -394,19 +394,26 @@ function spawnGhostDrop({ x, y, emoji }) {
   el.className = "ghost-drop";
   el.textContent = emoji;
 
+  // Use the coordinates from the signal
   el.style.position = "absolute";
   el.style.left = `${x}px`;
-  el.style.top = `${y}px`;
-  el.style.opacity = "0.75";
+  el.style.top = `${y}px`; // This is -40px
   el.style.pointerEvents = "none";
   el.style.zIndex = "5";
+  el.style.transition = "top 2s linear, opacity 2s ease-in"; // Add transition
 
   feedingField.appendChild(el);
 
-  // TEMP: no animation yet
+  // Force a reflow then trigger the "fall"
+  requestAnimationFrame(() => {
+    el.style.top = "100%"; // Fall to the bottom of the container
+    el.style.opacity = "0";
+  });
+
+  // Remove after the animation completes
   setTimeout(() => {
     el.remove();
-  }, 1000);
+  }, 2000);
 }
 
 
