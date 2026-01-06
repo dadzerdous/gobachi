@@ -775,7 +775,7 @@ function spawnFoodPiece(onResult) {
     piece.remove();
   }, 2200);
 }
-}
+
 
 function showFeedingFoodCount() {
   if (!feedingField) return;
