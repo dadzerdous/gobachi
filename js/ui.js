@@ -712,85 +712,69 @@ function spawnFoodPiece(onResult) {
   const game = document.getElementById("pet-game");
   if (!game) return;
 
-const piece = document.createElement("div");
-piece.className = "food-piece";
-piece.textContent = "🍖";
+  const piece = document.createElement("div");
+  piece.className = "food-piece";
+  piece.textContent = "🍖";
 
-// positioning logic (unchanged)
-if (lastDropClientX != null) {
-  piece.style.left = getDropXFromClient(lastDropClientX);
-  piece.style.transform = "translateX(-50%)";
-} else {
-  piece.style.left = "50%";
-  piece.style.transform = "translateX(-50%)";
-}
-
-// ✅ APPEND FIRST
-game.appendChild(piece);
-
-// ✅ THEN measure
-const pieceRect = piece.getBoundingClientRect();
-const fieldRect = feedingField.getBoundingClientRect();
-
-const x = pieceRect.left - fieldRect.left;
-const y = pieceRect.top - fieldRect.top;
-
-// broadcast
-sendChat({
-  emoji: currentPet?.emoji || "👻",
-  text: `__feed_drop__:${feedingSession.key}:${x}:${y}:${currentPet?.emoji || "👻"}`
-});
-
-
-
-}
-
-if (lastDropClientX != null) {
-  piece.style.left = getDropXFromClient(lastDropClientX);
-  piece.style.transform = "translateX(-50%)";
-} else {
-  piece.style.left = "50%";
-  piece.style.transform = "translateX(-50%)";
-}
-
-
-  game.appendChild(piece);
-   const bowlArea = document.querySelector(".bowl-area");
-let resolved = false;
-
-function checkCollision() {
-  if (!isFeeding || resolved) return;
-
-  const foodRect = piece.getBoundingClientRect();
-  const bowlRect = bowlArea.getBoundingClientRect();
-
-  const overlap =
-    foodRect.bottom >= bowlRect.top &&
-    foodRect.top <= bowlRect.bottom &&
-    foodRect.right >= bowlRect.left &&
-    foodRect.left <= bowlRect.right;
-
-  if (overlap) {
-    resolved = true;
-    onResult(true);
-    piece.remove();
+  // positioning
+  if (lastDropClientX != null) {
+    piece.style.left = getDropXFromClient(lastDropClientX);
+    piece.style.transform = "translateX(-50%)";
   } else {
-    requestAnimationFrame(checkCollision);
+    piece.style.left = "50%";
+    piece.style.transform = "translateX(-50%)";
   }
+
+  // ✅ append FIRST
+  game.appendChild(piece);
+
+  // ✅ then measure
+  const pieceRect = piece.getBoundingClientRect();
+  const fieldRect = feedingField.getBoundingClientRect();
+
+  const x = pieceRect.left - fieldRect.left;
+  const y = pieceRect.top - fieldRect.top;
+
+  // broadcast drop
+  sendChat({
+    emoji: currentPet?.emoji || "👻",
+    text: `__feed_drop__:${feedingSession.key}:${x}:${y}:${currentPet?.emoji || "👻"}`
+  });
+
+  const bowlArea = document.querySelector(".bowl-area");
+  let resolved = false;
+
+  function checkCollision() {
+    if (!isFeeding || resolved) return;
+
+    const foodRect = piece.getBoundingClientRect();
+    const bowlRect = bowlArea.getBoundingClientRect();
+
+    const overlap =
+      foodRect.bottom >= bowlRect.top &&
+      foodRect.top <= bowlRect.bottom &&
+      foodRect.right >= bowlRect.left &&
+      foodRect.left <= bowlRect.right;
+
+    if (overlap) {
+      resolved = true;
+      onResult(true);
+      piece.remove();
+    } else {
+      requestAnimationFrame(checkCollision);
+    }
+  }
+
+  requestAnimationFrame(checkCollision);
+
+  // auto-fail at bottom
+  setTimeout(() => {
+    if (resolved) return;
+    resolved = true;
+    onResult(false);
+    piece.remove();
+  }, 2200);
 }
-
-requestAnimationFrame(checkCollision);
-
-
-  let caught = false;
-
-  // auto-fail when it reaches bottom
-setTimeout(() => {
-  if (resolved) return;
-  resolved = true;
-  onResult(false);
-  piece.remove();
-}, 2200);
 }
 
 function showFeedingFoodCount() {
