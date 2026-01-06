@@ -344,20 +344,24 @@ if (text.startsWith("__feed_join__")) {
   }
   return true;
 }
-   if (text.startsWith("__feed_drop__")) {
+if (text.startsWith("__feed_drop__")) {
   const [, key, x, y, emoji] = text.split(":");
 
-if (!feedingSession || feedingSession.key !== key) return true;
+  if (!feedingSession || feedingSession.key !== key) return true;
 
-spawnGhostDrop({
-  x: Number(x),
-  y: Number(y),
-  emoji
-});
+  // 🚫 Don't render ghost for yourself
+  const myEmoji = currentPet?.emoji || "👻";
+  if (emoji === myEmoji) return true;
 
+  spawnGhostDrop({
+    x: Number(x),
+    y: Number(y),
+    emoji
+  });
 
   return true;
 }
+
 
 
   // ----------------------------------
