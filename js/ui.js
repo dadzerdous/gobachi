@@ -427,20 +427,15 @@ function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
   btn.className = "join-link";
   btn.textContent = "Join";
 btn.onclick = () => {
-   isFeedHost = false;
   if (btn.disabled) return;
 
-  // Prevent re-joining or hosting while a session is active
+  // 1️⃣ Prevent double-joining if a session with this key already exists
   if (feedingSession && feedingSession.key === key) return;
 
-   if (feedingSession && feedingSession.key === key && isFeeding) {
-  btn.style.display = "none";
-}
-
-
+  isFeedHost = false; 
   const remainingJoinMs = Math.max(1000, endsAt - Date.now());
 
-  // 1️⃣ Create the local session with full handlers
+  // 2️⃣ Create the session with the required handlers
   feedingSession = createFeedingSession({
     joinMs: remainingJoinMs,
     resultMs: FEED_RESULTS_MS,
@@ -455,36 +450,31 @@ btn.onclick = () => {
     return;
   }
 
-  // 2️⃣ Sync the host's session key (Crucial for signal matching)
+  // 3️⃣ Assign the key immediately so handleFeedSignals recognizes it
   feedingSession.key = key;
 
+  // 4️⃣ Reset local game counters
+  feedingTotalDrops = FEEDING_TOTAL_DROPS;
+  feedingDropsRemaining = feedingTotalDrops;
+  feedingHits = 0;
+  feedingFinished = 0;
 
-   feedingTotalDrops = FEEDING_TOTAL_DROPS;
-feedingDropsRemaining = feedingTotalDrops;
-feedingHits = 0;
-feedingFinished = 0;
+  // 5️⃣ Register local presence in the session
+  const myEmoji = currentPet ? currentPet.emoji : "👻";
+  feedingSession.join({
+    id: myEmoji, // Use emoji as ID to match handleFeedSignals logic
+    emoji: myEmoji
+  });
 
-   feedingSession.join({
-  id: "local",
-  emoji: currentPet ? currentPet.emoji : "👻"
-});
+  console.log("[JOIN CLICK] session created:", feedingSession.key);
 
-  console.log(
-    "[JOIN CLICK]",
-    "created session",
-    feedingSession.key,
-    "phase:",
-    feedingSession.snapshot().phase
-  );
-
-  // 3️⃣ Initialize local UI and start the joining phase
+  // 6️⃣ Initialize UI and Notify Network
   enterFeedingMode();
   bindFeedingInputOnce();
   feedingSession.startJoining();
 
-  // 4️⃣ Notify the host and network
   sendChat({
-    emoji: currentPet ? currentPet.emoji : "👻",
+    emoji: myEmoji,
     text: `__feed_join__:${key}`
   });
 
