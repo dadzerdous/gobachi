@@ -398,27 +398,32 @@ function spawnGhostDrop({ x, y, emoji }) {
   el.className = "ghost-drop";
   el.textContent = emoji;
 
-  // Use the coordinates from the signal
+  // positioning
   el.style.position = "absolute";
-  el.style.left = `${x}px`;
-  el.style.top = "-40px"; // match food spawn
+
+  // ✅ horizontal jitter (human feel)
+  const jitter = (Math.random() * 24) - 12; // ±12px
+  el.style.left = `${x + jitter}px`;
+  el.style.transform = "translateX(-50%)";
+
+  // ✅ vertical spawn matches food
+  el.style.top = "-40px";
 
   el.style.pointerEvents = "none";
   el.style.zIndex = "5";
-  el.style.transition = "top 2s linear, opacity 2.2s ease-in"; // Add transition
 
   feedingField.appendChild(el);
 
-  // Force a reflow then trigger the "fall"
+  // trigger fall
   requestAnimationFrame(() => {
-    el.style.top = "75%"; // Fall to the bottom of the container
+    el.style.top = "75%";
     el.style.opacity = "0";
   });
 
-  // Remove after the animation completes
-  setTimeout(() => {
+  // cleanup after animation
+  el.addEventListener("animationend", () => {
     el.remove();
-  }, 2000);
+  });
 }
 
 
