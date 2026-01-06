@@ -680,4 +680,8 @@ body.chat-open #view {
   font-size: 24px;
   white-space: nowrap;
   user-select: none;
+     opacity: 0.65;            /* visually secondary */
+  filter: blur(0.3px);      /* softens it slightly */
+  transform: translateX(-50%) scale(0.9);
+  pointer-events: none;
 }
