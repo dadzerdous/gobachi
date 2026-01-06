@@ -401,7 +401,8 @@ function spawnGhostDrop({ x, y, emoji }) {
   // Use the coordinates from the signal
   el.style.position = "absolute";
   el.style.left = `${x}px`;
-  el.style.top = `${y}px`; // This is -40px
+  el.style.top = "-40px"; // match food spawn
+
   el.style.pointerEvents = "none";
   el.style.zIndex = "5";
   el.style.transition = "top 2s linear, opacity 2.2s ease-in"; // Add transition
