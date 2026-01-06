@@ -328,21 +328,22 @@ function handleFeedSignals(msg) {
   // ----------------------------------
   // FEED JOIN
   // ----------------------------------
-  if (text.startsWith("__feed_join__")) {
-    const parts = text.split(":");
-    const key = parts[1];
-    if (!key) return true;
+if (text.startsWith("__feed_join__")) {
+  const parts = text.split(":");
+  const key = parts[1];
+  if (!key) return true;
 
-    if (feedingSession && feedingSession.key === key) {
-      feedingSession.join({
-        id: msg.id || msg.emoji,
-        emoji: msg.emoji || "👻"
-      });
-      renderJoiners(feedingSession.snapshot().caretakers);
-    }
-
-    return true;
+  // If we have a matching session, add the person to the list
+  if (feedingSession && feedingSession.key === key) {
+    feedingSession.join({
+      id: msg.id || msg.emoji,
+      emoji: msg.emoji || "👻"
+    });
+    // Refresh the UI list
+    renderJoiners(feedingSession.snapshot().caretakers);
   }
+  return true;
+}
    if (text.startsWith("__feed_drop__")) {
   const [, key, x, y, emoji] = text.split(":");
 
@@ -428,15 +429,14 @@ function showFeedJoinInvite({ key, endsAt, hostEmoji }) {
   btn.textContent = "Join";
 btn.onclick = () => {
   if (btn.disabled) return;
-
-  // 1️⃣ Prevent double-joining if a session with this key already exists
   if (feedingSession && feedingSession.key === key) return;
 
   isFeedHost = false; 
   const remainingJoinMs = Math.max(1000, endsAt - Date.now());
 
-  // 2️⃣ Create the session with the required handlers
+  // 1️⃣ Pass the KEY into the factory so it matches the host
   feedingSession = createFeedingSession({
+    key: key, 
     joinMs: remainingJoinMs,
     resultMs: FEED_RESULTS_MS,
     totalDrops: FEEDING_TOTAL_DROPS,
@@ -445,34 +445,30 @@ btn.onclick = () => {
     ...feedingJoinHandlers
   });
 
-  if (!feedingSession) {
-    console.error("❌ Failed to create joiner feeding session");
-    return;
-  }
-
-  // 3️⃣ Assign the key immediately so handleFeedSignals recognizes it
-  feedingSession.key = key;
-
-  // 4️⃣ Reset local game counters
+  // 2️⃣ Initialize local state
   feedingTotalDrops = FEEDING_TOTAL_DROPS;
   feedingDropsRemaining = feedingTotalDrops;
   feedingHits = 0;
   feedingFinished = 0;
 
-  // 5️⃣ Register local presence in the session
+  // 3️⃣ Enter 'joining' phase locally
+  // This is what makes the "PRESS" prompt and joiner list appear.
   const myEmoji = currentPet ? currentPet.emoji : "👻";
+  feedingSession.startJoining({ 
+    hostId: hostEmoji, // Reference the host's emoji
+    hostEmoji: hostEmoji 
+  });
+
+  // 4️⃣ Add yourself to the caretaker list
   feedingSession.join({
-    id: myEmoji, // Use emoji as ID to match handleFeedSignals logic
+    id: "local", 
     emoji: myEmoji
   });
 
-  console.log("[JOIN CLICK] session created:", feedingSession.key);
-
-  // 6️⃣ Initialize UI and Notify Network
   enterFeedingMode();
   bindFeedingInputOnce();
-  feedingSession.startJoining();
 
+  // 5️⃣ Notify host
   sendChat({
     emoji: myEmoji,
     text: `__feed_join__:${key}`
@@ -481,7 +477,6 @@ btn.onclick = () => {
   btn.disabled = true;
   btn.textContent = "Joined";
 };
-
 
 
   const timer = document.createElement("span");
