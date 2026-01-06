@@ -676,11 +676,17 @@ body.chat-open #view {
   text-align: center;
   line-height: 1.4;
 }
+@keyframes ghost-fall {
+  to { top: 75%; }
+}
 .ghost-drop {
-  font-size: 24px;
+     position: absolute;
+  top: -40px;
+  font-size: 26px;
   white-space: nowrap;
   user-select: none;
-     opacity: 0.65;            /* visually secondary */
+     opacity: 0.75; 
+   animation: ghost-fall 2.2s linear forwards;/* visually secondary */
   filter: blur(0.3px);      /* softens it slightly */
   transform: translateX(-50%) scale(0.9);
   pointer-events: none;
