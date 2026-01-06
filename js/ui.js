@@ -346,15 +346,14 @@ function handleFeedSignals(msg) {
    if (text.startsWith("__feed_drop__")) {
   const [, key, x, y, emoji] = text.split(":");
 
-  if (!feedingSession || feedingSession.key !== key) return true;
-  if (msg.emoji === currentPet?.emoji) return true;
+if (!feedingSession || feedingSession.key !== key) return true;
 
+spawnGhostDrop({
+  x: Number(x),
+  y: Number(y),
+  emoji
+});
 
-  spawnGhostDrop({
-    x: Number(x),
-    y: Number(y),
-    emoji
-  });
 
   return true;
 }
@@ -713,26 +712,35 @@ function spawnFoodPiece(onResult) {
   const game = document.getElementById("pet-game");
   if (!game) return;
 
-  const piece = document.createElement("div");
-  piece.className = "food-piece";
-  piece.textContent = "🍖";
-// ---------------------------------------
-// COOP: broadcast drop (visual-only)
-// ---------------------------------------
-if (
-  feedingSession &&
-  feedingSession.snapshot().phase === "active"
-) {
+const piece = document.createElement("div");
+piece.className = "food-piece";
+piece.textContent = "🍖";
+
+// positioning logic (unchanged)
+if (lastDropClientX != null) {
+  piece.style.left = getDropXFromClient(lastDropClientX);
+  piece.style.transform = "translateX(-50%)";
+} else {
+  piece.style.left = "50%";
+  piece.style.transform = "translateX(-50%)";
+}
+
+// ✅ APPEND FIRST
+game.appendChild(piece);
+
+// ✅ THEN measure
 const pieceRect = piece.getBoundingClientRect();
 const fieldRect = feedingField.getBoundingClientRect();
 
 const x = pieceRect.left - fieldRect.left;
 const y = pieceRect.top - fieldRect.top;
 
+// broadcast
 sendChat({
   emoji: currentPet?.emoji || "👻",
   text: `__feed_drop__:${feedingSession.key}:${x}:${y}:${currentPet?.emoji || "👻"}`
 });
+
 
 
 }
