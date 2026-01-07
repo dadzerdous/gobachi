@@ -1,405 +1,140 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Canyon Climber v0.4</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #111;
-            color: #fff;
-            font-family: 'Courier New', Courier, monospace;
-            touch-action: none; 
-            user-select: none;
-        }
-        canvas { display: block; }
-        #ui {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            pointer-events: none;
-            z-index: 10;
-        }
-        h1 { margin: 0; font-size: 24px; text-shadow: 2px 2px 0px #000; color: #fff;}
-        p { margin: 5px 0; font-size: 14px; color: #ddd; text-shadow: 1px 1px 0px #000;}
-        #version {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            font-size: 12px;
-            color: #555;
-            pointer-events: none;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gobachi</title>
+
+  <!-- Core styles -->
+  <link rel="stylesheet" href="css/main.css" />
 </head>
+
 <body>
+  <!-- =====================================================
+       APP ROOT
+       Everything lives inside this
+  ====================================================== -->
+  <div id="app">
 
-<div id="ui">
-    <h1 id="score">Height: 0</h1>
-    <p id="status-text">Hold to Aim, Release to Jump</p>
+    <!-- ===============================
+         PRESENCE HUD (minimal)
+         👤 + number goes here later
+    ================================ -->
+    <header id="hud">
+      <div id="presence" aria-label="players online">
+        <!-- rendered by ui.js -->
+      </div>
+
+      <button id="chat-toggle" type="button" aria-label="chat">💬</button>
+      <span class="version">v0.0.85</span>
+    </header>
+
+    <!-- ===============================
+         MAIN VIEW
+    ================================ -->
+    <main id="view">
+
+      <!-- --------------------------------
+           PET SELECTION (CRADLE)
+      --------------------------------- -->
+      <section id="pet-select" class="screen hidden">
+        <div class="cradle">
+          <div class="pet-slot pet-left"></div>
+          <div class="pet-slot pet-center"></div>
+          <div class="pet-slot pet-right"></div>
+        </div>
+
+        <div class="cradle-dots"></div>
+
+        <button id="create-pet" class="create-btn hidden">
+          Create
+        </button>
+      </section>
+
+      <!-- --------------------------------
+           ACTIVE PET VIEW
+      --------------------------------- -->
+      <section id="pet-view" class="screen hidden">
+        <div id="pet-display">
+<div id="pet-playfield">
+  <div id="pet-emoji"></div>
+  <div id="pet-game"></div>
+  <div id="feeding-field" class="hidden">
+   
+  </div>
 </div>
-<div id="version">v0.4</div>
 
-<canvas id="gameCanvas"></canvas>
 
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
 
-    // --- Configuration ---
-    const VERSION = "0.4";
-    let width, height;
-    
-    // Physics Constants
-    const gravity = 0.45;
-    const friction = 0.98;
-    const jumpPower = 19; 
-    
-    // --- Game States ---
-    const STATE_LOBBY = 0;
-    const STATE_PLAYING = 1;
-    const STATE_GAMEOVER = 2;
-    let currentState = STATE_LOBBY;
+</div>
 
-    // --- World State ---
-    let cameraY = 0;
-    let score = 0;
-    let buildings = [];
-    let buildingSpawnerY = 0; 
-    
-    // --- Aiming ---
-    let aimAngle = -Math.PI / 2; 
-    let aimDirection = 1; 
+        <div class="meter-area">
+        <div class="meters">
+  <div class="meter" data-meter="health" aria-label="health">
+    <span class="meter-icon">❤️</span>
+    <span class="meter-pill"></span>
+  </div>
 
-    // --- Input ---
-    const input = { isDown: false };
+  <div class="meter" data-meter="needs" aria-label="needs">
+    <span class="meter-icon">🍖</span>
+    <span class="meter-pill"></span>
+  </div>
 
-    // --- The Ball ---
-    const ball = {
-        x: 0, y: 0, vx: 0, vy: 0,
-        radius: 12,
-        isStuck: true,
-        stuckObject: null, 
-        color: '#00ffcc'
-    };
+  <div class="meter" data-meter="mood" aria-label="mood">
+    <span class="meter-icon">😄</span>
+    <span class="meter-pill"></span>
+  </div>
+</div>
+<div id="action-row" class="action-row hidden" aria-live="polite">
+  <!-- buttons injected by ui.js -->
+</div>
+        </div>
 
-    // --- Initialization ---
-    function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
-        if (buildings.length === 0) enterLobby();
-    }
+      </section>
 
-    function enterLobby() {
-        currentState = STATE_LOBBY;
-        cameraY = 0;
-        score = 0;
-        
-        // Reset Ball to bottom center
-        ball.radius = 12;
-        ball.x = width / 2;
-        ball.y = height - 50;
-        ball.vx = 0;
-        ball.vy = 0;
-        ball.isStuck = true;
-        ball.stuckObject = null; // Ground
-        ball.color = '#00ffcc';
+      <!-- --------------------------------
+           GRAVE VIEW
+      --------------------------------- -->
+      <section id="grave-view" class="screen hidden">
+        <div id="grave-display"></div>
+      </section>
 
-        // Reset Level
-        buildings = [];
-        buildingSpawnerY = height; 
-        
-        // Create the floor
-        buildings.push({
-            x: -50, y: height - 10, w: width + 100, h: 100, color: '#333'
-        });
+    </main>
 
-        // Generate initial canyon
-        generateBuildings(height - 100);
-        
-        updateUI();
-    }
+    <!-- ===============================
+         CHAT (DOCKED PANEL — NOT OVERLAY)
+    ================================ -->
+    <div id="chat-overlay" class="chat hidden">
+      <div class="chat-panel">
+        <div id="chat-messages"></div>
 
-    // --- Building Generation (The Canyon) ---
-    function generateBuildings(startY) {
-        // We generate in pairs (Left Wall, Right Wall) with a gap
-        while (buildingSpawnerY > startY - height * 2) { 
-            buildingSpawnerY -= (120 + Math.random() * 60); // Vertical Gap
-            
-            const wallHeight = 40 + Math.random() * 80;
-            const gapWidth = 150 + Math.random() * 100; // Size of the safe space in middle
-            
-            // Randomize how far left/right the gap is shifted
-            const centerShift = (Math.random() - 0.5) * (width * 0.4); 
-            const centerX = width / 2 + centerShift;
+        <div class="chat-input">
+          <input id="chat-text" placeholder="say something…" />
+          <button id="chat-send" type="button">➤</button>
+        </div>
+      </div>
+    </div>
 
-            const leftWallW = centerX - (gapWidth / 2);
-            const rightWallX = centerX + (gapWidth / 2);
-            const rightWallW = width - rightWallX;
+    <!-- ===============================
+         OVERLAYS (TRUE MODALS)
+    ================================ -->
 
-            // Left Building
-            if (leftWallW > 20) {
-                buildings.push({
-                    x: 0, 
-                    y: buildingSpawnerY, 
-                    w: leftWallW, 
-                    h: wallHeight, 
-                    color: '#555'
-                });
-            }
+    <!-- Name + Password -->
+    <div id="overlay-auth" class="overlay hidden">
+      <div class="overlay-content"></div>
+    </div>
 
-            // Right Building
-            if (rightWallW > 20) {
-                buildings.push({
-                    x: rightWallX, 
-                    y: buildingSpawnerY, 
-                    w: rightWallW, 
-                    h: wallHeight, 
-                    color: '#555'
-                });
-            }
-        }
-        
-        // Cleanup old buildings
-        buildings = buildings.filter(b => b.y - cameraY < height + 500);
-    }
+    <!-- Grave detail -->
+    <div id="overlay-grave" class="overlay hidden">
+      <div class="overlay-content"></div>
+    </div>
 
-    // --- Input Handling ---
-    function handleStart() {
-        if (currentState === STATE_GAMEOVER) {
-            enterLobby();
-            return;
-        }
-        if (currentState === STATE_LOBBY) {
-            currentState = STATE_PLAYING;
-            updateUI();
-        }
-        input.isDown = true;
-    }
-    
-    function handleEnd() {
-        input.isDown = false;
-        
-        if (currentState === STATE_PLAYING && ball.isStuck) {
-            launchBall();
-        }
-    }
+  </div>
 
-    window.addEventListener('mousedown', handleStart);
-    window.addEventListener('mouseup', handleEnd);
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleStart(); }, {passive:false});
-    canvas.addEventListener('touchend', (e) => { e.preventDefault(); handleEnd(); }, {passive:false});
+  <!-- =====================================================
+       SCRIPTS
+  ====================================================== -->
+  <script type="module" src="js/app.js"></script>
 
-    // --- Physics & Logic ---
-
-    function launchBall() {
-        ball.isStuck = false;
-        ball.stuckObject = null;
-        ball.color = '#ffeb3b'; // Yellow
-        
-        ball.vx = Math.cos(aimAngle) * jumpPower;
-        ball.vy = Math.sin(aimAngle) * jumpPower;
-    }
-
-    function checkCollision(rect) {
-        // Closest point on rect to circle center
-        let testX = ball.x;
-        let testY = ball.y;
-
-        if (ball.x < rect.x) testX = rect.x;      
-        else if (ball.x > rect.x + rect.w) testX = rect.x + rect.w;   
-        
-        if (ball.y < rect.y) testY = rect.y;      
-        else if (ball.y > rect.y + rect.h) testY = rect.y + rect.h;   
-
-        let distX = ball.x - testX;
-        let distY = ball.y - testY;
-        let distance = Math.sqrt((distX*distX) + (distY*distY));
-
-        if (distance <= ball.radius) {
-            return { hit: true, testX, testY };
-        }
-        return { hit: false };
-    }
-
-    // Resolve overlap so ball is never "inside" a building
-    function resolveOverlap(rect) {
-        // Determine which side is closest
-        // Distance to edges
-        const distLeft = Math.abs(ball.x - rect.x);
-        const distRight = Math.abs(ball.x - (rect.x + rect.w));
-        const distTop = Math.abs(ball.y - rect.y);
-        const distBottom = Math.abs(ball.y - (rect.y + rect.h));
-        
-        const minDist = Math.min(distLeft, distRight, distTop, distBottom);
-
-        if (minDist === distTop) ball.y = rect.y - ball.radius;
-        else if (minDist === distBottom) ball.y = rect.y + rect.h + ball.radius;
-        else if (minDist === distLeft) ball.x = rect.x - ball.radius;
-        else if (minDist === distRight) ball.x = rect.x + rect.w + ball.radius;
-    }
-
-    function update() {
-        if (currentState !== STATE_PLAYING) return;
-
-        // 1. Aim Oscillation
-        if (input.isDown) {
-            const speed = 0.08;
-            aimAngle += speed * aimDirection;
-            
-            // Limit angle to upper arc (-10deg to -170deg)
-            if (aimAngle > -0.2) { aimAngle = -0.2; aimDirection = -1; }
-            if (aimAngle < -Math.PI + 0.2) { aimAngle = -Math.PI + 0.2; aimDirection = 1; }
-        }
-
-        // 2. Physics
-        if (!ball.isStuck) {
-            ball.vy += gravity;
-            ball.vx *= friction;
-            ball.vy *= friction;
-            
-            ball.x += ball.vx;
-            ball.y += ball.vy;
-
-            // Screen Walls
-            if (ball.x < ball.radius) { ball.x = ball.radius; ball.vx *= -0.5; }
-            if (ball.x > width - ball.radius) { ball.x = width - ball.radius; ball.vx *= -0.5; }
-
-            // Building Collisions
-            if (input.isDown) { 
-                for (let b of buildings) {
-                    let col = checkCollision(b);
-                    if (col.hit) {
-                        resolveOverlap(b); // Push out immediately
-                        ball.isStuck = true;
-                        ball.vx = 0;
-                        ball.vy = 0;
-                        ball.stuckObject = b;
-                        ball.color = '#00ffcc';
-                        break;
-                    }
-                }
-            }
-        }
-
-        // 3. Camera
-        const targetY = ball.y - height * 0.6;
-        if (targetY < cameraY) {
-            cameraY += (targetY - cameraY) * 0.1;
-        }
-        
-        generateBuildings(cameraY);
-
-        // Score
-        let currentHeight = Math.floor(Math.abs(ball.y - (height - 50)) / 10);
-        if (currentHeight > score) score = currentHeight;
-
-        // Death
-        if (ball.y - cameraY > height + 100) {
-            currentState = STATE_GAMEOVER;
-            updateUI();
-        }
-    }
-
-    function updateUI() {
-        const status = document.getElementById('status-text');
-        const scoreEl = document.getElementById('score');
-        
-        if (currentState === STATE_LOBBY) {
-            status.innerText = "HOLD screen to Aim & Start";
-            status.style.color = "#00ffcc";
-        } else if (currentState === STATE_PLAYING) {
-            status.innerText = "";
-        } else if (currentState === STATE_GAMEOVER) {
-            status.innerText = "Tap anywhere to Restart";
-            status.style.color = "#ff3333";
-        }
-        scoreEl.innerText = `Height: ${score}`;
-    }
-
-    // --- Rendering ---
-    function draw() {
-        // Background
-        ctx.fillStyle = '#111';
-        ctx.fillRect(0, 0, width, height);
-
-        ctx.save();
-        ctx.translate(0, -cameraY);
-
-        // Draw Buildings
-        ctx.fillStyle = '#444';
-        ctx.strokeStyle = '#666';
-        ctx.lineWidth = 2;
-        for (let b of buildings) {
-            ctx.fillRect(b.x, b.y, b.w, b.h);
-            ctx.strokeRect(b.x, b.y, b.w, b.h);
-        }
-
-        // Draw Predictive Trajectory (The Curve)
-        if (input.isDown && ball.isStuck && currentState === STATE_PLAYING) {
-            drawTrajectory();
-        }
-
-        // Draw Ball
-        ctx.beginPath();
-        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-        ctx.fillStyle = ball.color;
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        ctx.restore();
-
-        // Game Over Text
-        if (currentState === STATE_GAMEOVER) {
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillRect(0, 0, width, height);
-            
-            ctx.fillStyle = 'white';
-            ctx.textAlign = 'center';
-            ctx.font = '30px Courier';
-            ctx.fillText("FALLEN", width/2, height/2 - 20);
-        }
-    }
-
-    function drawTrajectory() {
-        // Simulate physics to draw a curve
-        ctx.beginPath();
-        ctx.moveTo(ball.x, ball.y);
-
-        let simX = ball.x;
-        let simY = ball.y;
-        let simVX = Math.cos(aimAngle) * jumpPower;
-        let simVY = Math.sin(aimAngle) * jumpPower;
-
-        // Simulate 15 frames ahead
-        for(let i=0; i<15; i++) {
-            simVY += gravity;
-            simVX *= friction;
-            simVY *= friction;
-            simX += simVX;
-            simY += simVY;
-            ctx.lineTo(simX, simY);
-        }
-
-        ctx.strokeStyle = '#ff0055';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-    }
-
-    function loop() {
-        update();
-        draw();
-        requestAnimationFrame(loop);
-    }
-
-    window.addEventListener('resize', resize);
-    resize();
-    loop();
-
-</script>
 </body>
 </html>
