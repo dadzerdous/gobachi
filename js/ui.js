@@ -13,7 +13,9 @@ import {
   startBowlMovement, 
   stopBowlMovement, 
   spawnFoodPiece, 
-  bowlPop 
+  bowlPop,
+  spawnGhostDrop, // <--- Add this
+  spawnSpark      // <--- Add this
 } from "./feedinggame.js";
 
 /* --------------------------------------
