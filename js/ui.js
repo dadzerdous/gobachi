@@ -414,11 +414,7 @@ function spawnGhostDrop({ x, y, emoji }) {
 
   feedingField.appendChild(el);
 
-  // trigger fall
-  requestAnimationFrame(() => {
-    el.style.top = "75%";
-    el.style.opacity = "0";
-  });
+
 
   // cleanup after animation
   el.addEventListener("animationend", () => {
