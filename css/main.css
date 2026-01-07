@@ -680,14 +680,10 @@ body.chat-open #view {
   to { top: 75%; }
 }
 .ghost-drop {
-     position: absolute;
+  position: absolute;
   top: -40px;
   font-size: 26px;
-  white-space: nowrap;
-  user-select: none;
-     opacity: 0.75; 
-   animation: ghost-fall 2.2s linear forwards;/* visually secondary */
-  filter: blur(0.3px);      /* softens it slightly */
-  transform: translateX(-50%) scale(0.9);
+  opacity: 0.65;
+  animation: ghost-fall 2.2s linear forwards;
   pointer-events: none;
 }
