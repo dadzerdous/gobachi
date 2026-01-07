@@ -9,6 +9,53 @@ let bowlDir = 1;
 let bowlSpeed = 0.5;
 let bowlRAF = null;
 
+/* --- feedinggame.js additions --- */
+
+export function spawnGhostDrop({ x, y, emoji, container }) {
+  const el = document.createElement("div");
+  el.className = "ghost-drop";
+  el.textContent = emoji;
+
+  // Visual jitter so they don't look robotic
+  const jitter = (Math.random() * 24) - 12; 
+  el.style.left = `${x + jitter}px`;
+  el.style.top = "-40px"; // Start above the bowl area
+  
+  if (container) container.appendChild(el);
+
+  // Auto-remove after animation
+  el.addEventListener("animationend", () => el.remove());
+}
+
+export function spawnSpark(container) {
+  if (!container) return;
+  
+  const bowlArea = container.querySelector(".bowl-area");
+  if (!bowlArea) return;
+
+  const spark = document.createElement("div");
+  spark.textContent = "✨";
+  spark.style.position = "absolute";
+  // Center the spark on the bowl
+  spark.style.left = bowlArea.style.left || "50%"; 
+  spark.style.bottom = "48px";
+  spark.style.transform = "translateX(-50%)";
+  spark.style.pointerEvents = "none";
+  spark.style.fontSize = "18px";
+  spark.className = "spark-anim"; // specific class or inline styles below
+
+  container.appendChild(spark);
+
+  const anim = spark.animate(
+    [
+      { opacity: 1, transform: "translate(-50%, 0) scale(1)" },
+      { opacity: 0, transform: "translate(-50%, -20px) scale(1.4)" }
+    ],
+    { duration: 300, easing: "ease-out" }
+  );
+
+  anim.onfinish = () => spark.remove();
+}
 export function startBowlMovement() {
   const bowlArea = document.querySelector(".bowl-area");
   if (!bowlArea) return;
